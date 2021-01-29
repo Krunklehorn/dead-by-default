@@ -1,14 +1,10 @@
 # Dead by Default
 
-A top-down 2D exploration of the asymmetrical multiplayer genre primarily based on Behaviour Interactive's Dead by Daylight.  
-Written using the LÖVE engine, this project is intended as a de-make for non-commercial use.
+A top-down 2D exploration of the asymmetrical multiplayer genre primarily based on Behaviour Interactive's Dead by Daylight. Written using the LÖVE engine, this project is intended as a de-make for non-commercial use.
 
-In summary, gameplay is intended to demonstrate the core or "default" aspects of the base experience and any additional changes  
-are presented as explorations of the asymmetrical genre. Balance changes are explored with the intent of encouraging game health  
-and competitive sportsmanship.
+In summary, gameplay is intended to demonstrate the core or "default" aspects of the base experience and any additional changes are presented as explorations of the asymmetrical genre. Balance changes are explored with the intent of encouraging game health and competitive sportsmanship.
 
-The game is __not__ playable at this point, and is currently a blasting ground for engine features. It always has and will be a hobbyist's  
-technical demonstration and will remain a free, open-source project *for educational and creative purposes.*
+The game is __not__ playable at this point, and is currently a blasting ground for engine features. It always has and will be a hobbyist's technical demonstration and will remain a free, open-source project *for educational and creative purposes.*
 
 ![Cone-marched Lights & Shadows](meta/deadbydefault_210128_3.png)
 ![Editor Tools](meta/deadbydefault_210128_4.png)
