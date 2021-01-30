@@ -3,9 +3,9 @@
 #define MATH_HUGE 100000
 #define SDF_MAX_BRUSHES 140
 #define SDF_MAX_LIGHTS 12
-#define edgebias (line_hwidth + 0.5)
+#define edgebias (line_width + 0.5)
 
-uniform float line_hwidth = 1;
+uniform float line_width = 1;
 
 struct Circle {
 	vec3 pos_radius;
@@ -138,7 +138,7 @@ vec4 addLight(vec2 xy, vec2 pos, vec4 color, float range, float radius)
 
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	float sdist = sceneDist(xy);
-	float edge = clamp(1 + (line_hwidth - 1 - abs(sdist)) / 1.5, 0, 1);
+	float edge = clamp(1 + (line_width - 1 - abs(sdist)) / 1.5, 0, 1);
 	float depth = mix(0.1, 0.2, clamp((height - 128) / 255, 0, 1));
 	vec4 lighting = vec4(0);
 	vec4 previous = Texel(canvas, uv);

@@ -40,7 +40,7 @@ function Brush.batchSDF(brushes, entities)
 		lg.setShader(sdfShader)
 			lg.clear()
 			lg.setBlendMode("replace")
-			utils.send(sdfShader, "line_hwidth", LINE_WIDTH / 2)
+			utils.send(sdfShader, "line_width", LINE_WIDTH)
 
 			local camera = humpstate.current().camera
 			local scale = camera:getNormalizedScale()

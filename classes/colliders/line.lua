@@ -69,7 +69,7 @@ function LineCollider:draw(color, scale)
 
 		lg.setShader(shader)
 			stache.setColor(color)
-			shader:send("line_hwidth", LINE_WIDTH / 2)
+			shader:send("line_width", LINE_WIDTH)
 
 			local delta = self.delta:scaled(camera:getNormalizedScale()):rotated(-camera.angle)
 
