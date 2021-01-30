@@ -39,7 +39,7 @@ local function checkType(x, typename, name)
 	return x
 end
 
-local function unpackCamera(t)
+local function unpackCamera(t, nolerp) -- Modified to retrieve camera parameters based on destination
 	local sx, sy, sw, sh
 	if t.getWindow then -- assume t is a gamera camera
 	   sx, sy, sw, sh = t:getWindow()
@@ -50,11 +50,14 @@ local function unpackCamera(t)
 		  t.sw or lg.getWidth(),
 		  t.sh or lg.getHeight()
 	end
+	local p = t.getPosition and t:getPosition(nolerp or false)
+	local a = t.getAngle and t:getAngle(nolerp or false)
+	local s = t.getScale and t:getScale(nolerp or false)
 	return
-	   t.x or t.pos.x or 0, -- Krunk: Added vec2 hooks
-	   t.y or t.pos.y or 0, -- Krunk: Added vec2 hooks
-	   (t.scale or t.zoom or 1) * UI_SCALE, -- Krunk: Added support for automatic graphics scaling
-	   t.angle or t.rot or 0,
+	   p and p.x or t.x or 0,
+	   p and p.y or t.y or 0,
+	   (s or t.scale or t.zoom or 1) * UI_SCALE, -- Added support for automatic graphics scaling
+	   a or t.angle or t.rot or 0,
 	   sx, sy, sw, sh
 end
 
@@ -62,7 +65,7 @@ local DEFAULT_COLOR = {220 / 255, 220 / 255, 220 / 255}
 local DEFAULT_X_COLOR = {255 / 255, 0 / 255, 0 / 255}
 local DEFAULT_Y_COLOR = {0 / 255, 255 / 255, 0 / 255}
 
-local function unpackVisuals(t, zoom)
+local function unpackVisuals(t)
 	local size = t.size or 256
 	if type(size) == "function" then
 	   size = size(zoom)
@@ -129,19 +132,21 @@ local function toScreen(camera, worldx, worldy)
 	return zoom * x + sw/2 + sx, zoom * y + sh/2 + sy
 end
 
-local function minorInterval(camera, visuals)
+local function minorInterval(camera, visuals, nolerp) -- Modified to get interval based on destination
 	camera = checkType(camera or EMPTY, "table", "camera")
 	visuals = checkType(visuals or EMPTY, "table", "visuals")
-	local zoom = select(3, unpackCamera(camera))
+	nolerp = checkType(nolerp or false, "boolean", "nolerp")
+	local zoom = select(3, unpackCamera(camera, nolerp))
 	return getGridInterval(visuals, zoom)
 end
 
-local function majorInterval(camera, visuals)
+local function majorInterval(camera, visuals, nolerp) -- Modified to get interval based on destination
 	camera = checkType(camera or EMPTY, "table", "camera")
 	visuals = checkType(visuals or EMPTY, "table", "visuals")
-	local zoom = select(3, unpackCamera(camera))
+	nolerp = checkType(nolerp or false, "boolean", "nolerp")
+	local zoom = select(3, unpackCamera(camera, nolerp))
 	local sds = select(2, unpackVisuals(visuals, zoom))
-	return sds * minorInterval(camera, visuals)
+	return sds * minorInterval(camera, visuals, nolerp)
 end
 
 local function cellToWorld(camera, visuals, x, y)
@@ -250,7 +255,7 @@ local function draw(camera, visuals)
 
 	lg.setScissor(sx, sy, sw, sh)
 	local vx, vy, vw, vh = visible(camera)
-	local d = getGridInterval(visuals, zoom)
+	local d = getGridInterval(visuals, (camera.getScale and camera:getScale(true) or t.scale or t.zoom or 1) * UI_SCALE) -- Modified to always use the lerped zoom level
 	local delta = d / 2
 
 	push(camera)
@@ -357,8 +362,8 @@ local gridIndex = {
 	   return convertCoords(self.camera, self.visuals, src, dest, x, y)
 	end,
 	draw = function (self) return draw(self.camera, self.visuals) end,
-	minorInterval = function (self)
-	   return minorInterval(self.camera, self.visuals)
+	minorInterval = function (self, nolerp) -- Added support for getting interval based on destination zoom level
+	   return minorInterval(self.camera, self.visuals, nolerp)
 	end,
 	majorInterval = function (self)
 	   return majorInterval(self.camera, self.visuals)
@@ -374,7 +379,7 @@ local gridMt = {
 
 local function grid(camera, visuals)
 	camera = checkType(camera or EMPTY, "table", "camera") -- Added missing use of EMPTY
-	visuals = checkType(visuals or EMPTY, "table", "visuals") -- Added missing use of EMPTY
+	visuals = checkType(visuals, "table", "visuals")
 	return setmetatable({
 	   camera = camera,
 	   visuals = visuals

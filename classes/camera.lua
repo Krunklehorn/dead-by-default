@@ -296,6 +296,25 @@ function Camera:checkBounds()
 	end
 end
 
+function Camera:getPosition(nolerp)
+	utils.checkArg("nolerp", nolerp, "boolean", "Camera:getPosition", true)
+	return nolerp and (self.ptarget and (vec2.isVec2(self.ptarget) and self.ptarget or self.ptarget[self.pkey])) or self.pos
+end
+
+function Camera:getAngle(nolerp)
+	utils.checkArg("nolerp", nolerp, "boolean", "Camera:getAngle", true)
+	return nolerp and (self.atarget and (type(self.atarget) == "number" and self.atarget or self.atarget[self.akey])) or self.angle
+end
+
+function Camera:getScale(nolerp)
+	utils.checkArg("nolerp", nolerp, "boolean", "Camera:getScale", true)
+	return nolerp and (self.starget and (type(self.starget) == "number" and self.starget or self.starget[self.skey])) or self.scale
+end
+
+function Camera:getNormalizedScale()
+	return self.scale * UI_SCALE
+end
+
 function Camera:setPTarget(ptarget, pkey, jump)
 	utils.checkArg("ptarget", ptarget, "table", "Camera:setPTarget")
 	utils.checkArg("pkey", pkey, "string", "Camera:setPTarget")
@@ -354,10 +373,6 @@ function Camera:setBounds(p1, p2)
 	}
 end
 
-function Camera:getNormalizedScale()
-	return self.scale * UI_SCALE
-end
-
 function Camera:clearPTarget()
 	self.ptarget = nil
 	self.pkey = nil
@@ -383,9 +398,9 @@ function Camera:toWorld(x, y, nolerp)
 	utils.checkArg("nolerp", nolerp, "boolean", "Camera:toWorld", true)
 
 	local point = utils.isVector(x) and x.xy or vec2(x, y)
-	local pos = nolerp and (self.ptarget and (vec2.isVec2(self.ptarget) and self.ptarget or self.ptarget[self.pkey])) or self.pos
-	local angle = nolerp and (self.atarget and (type(self.atarget) == "number" and self.atarget or self.atarget[self.akey])) or self.angle
-	local scale = nolerp and (self.starget and (type(self.starget) == "number" and self.starget or self.starget[self.skey])) or self.scale
+	local pos = self:getPosition(nolerp)
+	local angle = self:getAngle(nolerp)
+	local scale = self:getScale(nolerp)
 
 	point = point - WINDOW_CENTER_VEC2
 	point = point:rotated(angle) / (scale * UI_SCALE)
@@ -400,9 +415,9 @@ function Camera:toScreen(x, y, nolerp)
 	utils.checkArg("nolerp", nolerp, "boolean", "Camera:toScreen", true)
 
 	local point = utils.isVector(x) and x.xy or vec2(x, y)
-	local pos = nolerp and (self.ptarget and (vec2.isVec2(self.ptarget) and self.ptarget or self.ptarget[self.pkey])) or self.pos
-	local angle = nolerp and (self.atarget and (type(self.atarget) == "number" and self.atarget or self.atarget[self.akey])) or self.angle
-	local scale = nolerp and (self.starget and (type(self.starget) == "number" and self.starget or self.starget[self.skey])) or self.scale
+	local pos = self:getPosition(nolerp)
+	local angle = self:getAngle(nolerp)
+	local scale = self:getScale(nolerp)
 
 	point = point - pos
 	point = point:rotated(-angle) * (scale * UI_SCALE)
