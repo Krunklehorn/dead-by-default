@@ -39,7 +39,7 @@ local colors = {
 -- patch shader:send if 'lighten' gets optimized away
 local function safesend(shader, name, ...)
   if shader:hasUniform(name) then
-    shader:send(name, ...)
+	shader:send(name, ...)
   end
 end
 
@@ -53,69 +53,69 @@ function splashlib.new(init)
   self.delay_after = init.delay_after or 0.7
 
   if init.fill == "rain" then
-    local rain = {}
-    rain.spacing_x = 110
-    rain.spacing_y = 80
-    rain.image = love.graphics.newImage(current_folder .. "/baby.png")
-    rain.img_w = rain.image:getWidth()
-    rain.img_h = rain.image:getHeight()
-    rain.ox = -rain.img_w / 2
-    rain.oy = -rain.img_h / 2
-    rain.batch = love.graphics.newSpriteBatch(rain.image, 512)
-    rain.t = 0
+	local rain = {}
+	rain.spacing_x = 110
+	rain.spacing_y = 80
+	rain.image = love.graphics.newImage(current_folder .. "/baby.png")
+	rain.img_w = rain.image:getWidth()
+	rain.img_h = rain.image:getHeight()
+	rain.ox = -rain.img_w / 2
+	rain.oy = -rain.img_h / 2
+	rain.batch = love.graphics.newSpriteBatch(rain.image, 512)
+	rain.t = 0
 
-    local gradient = love.graphics.newMesh({
-      {    0, height/4, 0, 0,  0, 0, 0,   0},
-      {width, height/4, 0, 0,  0, 0, 0,   0},
-      {width, height,   0, 0,  0, 0, 0, 200},
-      {    0, height,   0, 0,  0, 0, 0, 200},
-    }, "fan", "static")
-    do
-      local batch = rain.batch
+	local gradient = love.graphics.newMesh({
+	  {    0, height/4, 0, 0,  0, 0, 0,   0},
+	  {width, height/4, 0, 0,  0, 0, 0,   0},
+	  {width, height,   0, 0,  0, 0, 0, 200},
+	  {    0, height,   0, 0,  0, 0, 0, 200},
+	}, "fan", "static")
+	do
+	  local batch = rain.batch
 
-      local sx = rain.spacing_x
-      local sy = rain.spacing_y
-      local ox = rain.ox
-      local oy = rain.oy
+	  local sx = rain.spacing_x
+	  local sy = rain.spacing_y
+	  local ox = rain.ox
+	  local oy = rain.oy
 
-      local batch_w = 2 * math.ceil(love.graphics.getWidth() / sx) + 2
-      local batch_h = 2 * math.ceil(love.graphics.getHeight() / sy) + 2
+	  local batch_w = 2 * math.ceil(love.graphics.getWidth() / sx) + 2
+	  local batch_h = 2 * math.ceil(love.graphics.getHeight() / sy) + 2
 
-      batch:clear()
+	  batch:clear()
 
-      if batch:getBufferSize() < batch_w * batch_h then
-        batch:setBufferSize(batch_w * batch_h)
-      end
+	  if batch:getBufferSize() < batch_w * batch_h then
+		batch:setBufferSize(batch_w * batch_h)
+	  end
 
-      for i = 0, batch_h - 1 do
-        for j = 0, batch_w - 1 do
-          local is_even = (j % 2) == 0
-          local offset_y = is_even and 0 or sy / 2
-          local x = ox + j * sx
-          local y = oy + i * sy + offset_y
-          batch:add(x, y)
-        end
-      end
+	  for i = 0, batch_h - 1 do
+		for j = 0, batch_w - 1 do
+		  local is_even = (j % 2) == 0
+		  local offset_y = is_even and 0 or sy / 2
+		  local x = ox + j * sx
+		  local y = oy + i * sy + offset_y
+		  batch:add(x, y)
+		end
+	  end
 
-      batch:flush()
-    end
+	  batch:flush()
+	end
 
-    function self.fill()
-      local y = rain.spacing_y * select(2, math.modf(self.elapsed))
+	function self.fill()
+	  local y = rain.spacing_y * select(2, math.modf(self.elapsed))
 
-      local small_y = -rain.spacing_y + y / 2
-      local big_y = -rain.spacing_y + y
+	  local small_y = -rain.spacing_y + y / 2
+	  local big_y = -rain.spacing_y + y
 
-      love.graphics.setBlendMode("subtract")
-      love.graphics.setColor(1, 1, 1, .5)
-      love.graphics.draw(rain.batch, -rain.spacing_x, small_y, 0, 0.5, 0.5)
+	  love.graphics.setBlendMode("subtract")
+	  love.graphics.setColor(1, 1, 1, .5)
+	  love.graphics.draw(rain.batch, -rain.spacing_x, small_y, 0, 0.5, 0.5)
 
-      love.graphics.setBlendMode("alpha")
-      love.graphics.setColor(.81, .81, .81, 1)
-      love.graphics.draw(rain.batch, -rain.spacing_x, big_y)
+	  love.graphics.setBlendMode("alpha")
+	  love.graphics.setColor(.81, .81, .81, 1)
+	  love.graphics.draw(rain.batch, -rain.spacing_x, big_y)
 
-      love.graphics.draw(gradient)
-    end
+	  love.graphics.draw(gradient)
+	end
   end
 
   -- radial mask shader
@@ -127,28 +127,28 @@ function splashlib.new(init)
   extern number lighten;
 
   vec4 desat(vec4 color) {
-    number g = dot(vec3(.299, .587, .114), color.rgb);
-    return vec4(g, g, g, 1.0) * lighten;
+	number g = dot(vec3(.299, .587, .114), color.rgb);
+	return vec4(g, g, g, 1.0) * lighten;
   }
 
   vec4 effect(vec4 global_color, Image canvas, vec2 tc, vec2 _)
   {
-    // radial mask
-    vec4 color = Texel(canvas, tc);
-    number r = length((tc - vec2(.5)) * love_ScreenSize.xy);
-    number s = smoothstep(radius+blur, radius-blur, r);
-    #ifdef LIGHTEN
-    color = color + desat(color) * (1.0-s);
-    #else
-    color.a *= s;
-    #endif
-    color.a *= global_color.a;
+	// radial mask
+	vec4 color = Texel(canvas, tc);
+	number r = length((tc - vec2(.5)) * love_ScreenSize.xy);
+	number s = smoothstep(radius+blur, radius-blur, r);
+	#ifdef LIGHTEN
+	color = color + desat(color) * (1.0-s);
+	#else
+	color.a *= s;
+	#endif
+	color.a *= global_color.a;
 
-    // add shadow on lower diagonal along the circle
-    number sr = 7. * (1. - smoothstep(-.1,.04,(1.-tc.x)-tc.y));
-    s = (1. - pow(exp(-pow(radius-r, 2.) / sr),3.) * shadow);
+	// add shadow on lower diagonal along the circle
+	number sr = 7. * (1. - smoothstep(-.1,.04,(1.-tc.x)-tc.y));
+	s = (1. - pow(exp(-pow(radius-r, 2.) / sr),3.) * shadow);
 
-    return color - vec4(1, 1, 1, 0) * (1.0-s);
+	return color - vec4(1, 1, 1, 0) * (1.0-s);
   }
   ]])
 
@@ -158,13 +158,13 @@ function splashlib.new(init)
 
   vec4 effect(vec4 color, Image logo, vec2 tc, vec2 sc)
   {
-    //Probably would be better to just use the texture's dimensions instead; faster reaction.
-    vec2 sd = sc / love_ScreenSize.xy;
+	//Probably would be better to just use the texture's dimensions instead; faster reaction.
+	vec2 sd = sc / love_ScreenSize.xy;
 
-    if (sd.x <= alpha) {
-      return color * Texel(logo, tc);
-    }
-    return vec4(0);
+	if (sd.x <= alpha) {
+	  return color * Texel(logo, tc);
+	}
+	return vec4(0);
   }
   ]]
 
@@ -178,16 +178,16 @@ function splashlib.new(init)
 
   vec4 effect(vec4 color, Image logo, vec2 tc, vec2 sc)
   {
-    number value = math.max(Texel(mask, tc).r, math.max(Texel(mask, tc).g, Texel(mask, tc).b));
-    number alpha = Texel(mask, tc).a;
+	number value = max(Texel(mask, tc).r, max(Texel(mask, tc).g, Texel(mask, tc).b));
+	number alpha = Texel(mask, tc).a;
 
-    //probably could be optimzied...
-    if (alpha > 0.0) {
-      if (pen >= value) {
-        return color * Texel(logo, tc);
-      }
-    }
-    return vec4(0);
+	//probably could be optimzied...
+	if (alpha > 0.0) {
+	  if (pen >= value) {
+		return color * Texel(logo, tc);
+	  }
+	}
+	return vec4(0);
   }
   ]]
 
@@ -196,30 +196,30 @@ function splashlib.new(init)
   self.elapsed = 0
   self.alpha = 1
   self.heart = {
-    sprite = love.graphics.newImage(current_folder .. "/heart.png"),
-    scale = 0,
-    rot   = 0
+	sprite = love.graphics.newImage(current_folder .. "/heart.png"),
+	scale = 0,
+	rot   = 0
   }
 
   self.stripes = {
-    rot     = 0,
-    height  = 100,
-    offset  = -2 * width,
-    radius  = math.max(width, height),
-    lighten = 0,
-    shadow  = 0,
+	rot     = 0,
+	height  = 100,
+	offset  = -2 * width,
+	radius  = math.max(width, height),
+	lighten = 0,
+	shadow  = 0,
   }
 
   self.text = {
-    obj   = love.graphics.newText(love.graphics.newFont(current_folder .. "/handy-andy.otf", 22), "made with"),
-    alpha = 0
+	obj   = love.graphics.newText(love.graphics.newFont(current_folder .. "/handy-andy.otf", 22), "made with"),
+	alpha = 0
   }
   self.text.width, self.text.height = self.text.obj:getDimensions()
 
   self.logo = {
-    sprite = love.graphics.newImage(current_folder .. "/logo.png"),
-    mask   = love.graphics.newImage(current_folder .. "/logo-mask.png"),
-    pen    = 0
+	sprite = love.graphics.newImage(current_folder .. "/logo.png"),
+	mask   = love.graphics.newImage(current_folder .. "/logo-mask.png"),
+	pen    = 0
   }
   self.logo.width, self.logo.height = self.logo.sprite:getDimensions()
 
@@ -236,64 +236,64 @@ function splashlib.new(init)
   timer.clear()
   timer.script(function(wait)
 
-    wait(self.delay_before)
+	wait(self.delay_before)
 
-    -- roll in stripes
-    timer.tween(0.5, self.stripes, {offset = 0})
-    wait(0.3)
+	-- roll in stripes
+	timer.tween(0.5, self.stripes, {offset = 0})
+	wait(0.3)
 
-    timer.tween(0.3, self.stripes, {rot = -5 * math.pi / 18, height=height})
-    wait(0.2)
+	timer.tween(0.3, self.stripes, {rot = -5 * math.pi / 18, height=height})
+	wait(0.2)
 
-    -- hackety hack: execute timer to update shader every frame
-    timer.every(0, function()
-      safesend(self.maskshader, "radius",  self.stripes.radius)
-      safesend(self.maskshader, "lighten", self.stripes.lighten)
-      safesend(self.maskshader, "shadow",  self.stripes.shadow)
-      safesend(self.textshader, "alpha",   self.text.alpha)
-      safesend(self.logoshader, "pen",     self.logo.pen)
-    end)
+	-- hackety hack: execute timer to update shader every frame
+	timer.every(0, function()
+	  safesend(self.maskshader, "radius",  self.stripes.radius)
+	  safesend(self.maskshader, "lighten", self.stripes.lighten)
+	  safesend(self.maskshader, "shadow",  self.stripes.shadow)
+	  safesend(self.textshader, "alpha",   self.text.alpha)
+	  safesend(self.logoshader, "pen",     self.logo.pen)
+	end)
 
-    -- focus the heart, desaturate the rest
-    timer.tween(0.2, self.stripes, {radius  = 170*love.graphics.getDPIScale()})
-    timer.tween(0.4, self.stripes, {lighten = .06}, "quad")
-    wait(0.2)
+	-- focus the heart, desaturate the rest
+	timer.tween(0.2, self.stripes, {radius  = 170*love.graphics.getDPIScale()})
+	timer.tween(0.4, self.stripes, {lighten = .06}, "quad")
+	wait(0.2)
 
-    timer.tween(0.2, self.stripes,  {radius = 70*love.graphics.getDPIScale()}, "out-back")
-    timer.tween(0.7, self.stripes,  {shadow = .3}, "back")
-    timer.tween(0.8, self.heart,    {scale  =  1}, "out-elastic", nil, 1, 0.3)
+	timer.tween(0.2, self.stripes,  {radius = 70*love.graphics.getDPIScale()}, "out-back")
+	timer.tween(0.7, self.stripes,  {shadow = .3}, "back")
+	timer.tween(0.8, self.heart,    {scale  =  1}, "out-elastic", nil, 1, 0.3)
 
-    -- write out the text
-    timer.tween(.75, self.text, {alpha = 1}, "linear")
+	-- write out the text
+	timer.tween(.75, self.text, {alpha = 1}, "linear")
 
-    -- draw out the logo, in parts
-    local mult = 0.65
-    local function tween_and_wait(dur, pen, easing)
-      timer.tween(mult * dur, self.logo, {pen = pen/255}, easing)
-      wait(mult * dur)
-    end
-    tween_and_wait(0.175,  50, "in-quad")     -- L
-    tween_and_wait(0.300, 100, "in-out-quad") -- O
-    tween_and_wait(0.075, 115, "out-sine")    -- first dot on O
-    tween_and_wait(0.075, 129, "out-sine")    -- second dot on O
-    tween_and_wait(0.125, 153, "in-out-quad") -- \
-    tween_and_wait(0.075, 179, "in-quad")     -- /
-    tween_and_wait(0.250, 205, "in-quart")    -- e->break
-    tween_and_wait(0.150, 230, "out-cubic")   -- e finish
-    tween_and_wait(0.150, 244, "linear")      -- ()
-    tween_and_wait(0.100, 255, "linear")      -- R
-    wait(0.4)
+	-- draw out the logo, in parts
+	local mult = 0.65
+	local function tween_and_wait(dur, pen, easing)
+	  timer.tween(mult * dur, self.logo, {pen = pen/255}, easing)
+	  wait(mult * dur)
+	end
+	tween_and_wait(0.175,  50, "in-quad")     -- L
+	tween_and_wait(0.300, 100, "in-out-quad") -- O
+	tween_and_wait(0.075, 115, "out-sine")    -- first dot on O
+	tween_and_wait(0.075, 129, "out-sine")    -- second dot on O
+	tween_and_wait(0.125, 153, "in-out-quad") -- \
+	tween_and_wait(0.075, 179, "in-quad")     -- /
+	tween_and_wait(0.250, 205, "in-quart")    -- e->break
+	tween_and_wait(0.150, 230, "out-cubic")   -- e finish
+	tween_and_wait(0.150, 244, "linear")      -- ()
+	tween_and_wait(0.100, 255, "linear")      -- R
+	wait(0.4)
 
-    -- no more skipping
-    wait(self.delay_after)
-    self.done = true
+	-- no more skipping
+	wait(self.delay_after)
+	self.done = true
 
-    timer.tween(0.3, self, {alpha = 0})
-    wait(0.3)
+	timer.tween(0.3, self, {alpha = 0})
+	wait(0.3)
 
-    timer.clear()
+	timer.clear()
 
-    if self.onDone then self.onDone() end
+	if self.onDone then self.onDone() end
   end)
 
   self.draw = splashlib.draw
@@ -307,42 +307,42 @@ function splashlib:draw()
   local width, height = love.graphics.getDimensions()
 
   if self.background then
-    love.graphics.clear(self.background)
+	love.graphics.clear(self.background)
   end
 
   if self.fill and self.elapsed > self.delay_before + 0.6 then
-    self:fill()
+	self:fill()
   end
 
   self.canvas:renderTo(function()
-    love.graphics.push()
-    love.graphics.translate(width / 2, height / 2)
+	love.graphics.push()
+	love.graphics.translate(width / 2, height / 2)
 
-    love.graphics.push()
-    love.graphics.rotate(self.stripes.rot)
-    love.graphics.setColor(colors.pink)
-    love.graphics.rectangle(
-      "fill",
-      self.stripes.offset - width, -self.stripes.height,
-      width * 2, self.stripes.height
-    )
+	love.graphics.push()
+	love.graphics.rotate(self.stripes.rot)
+	love.graphics.setColor(colors.pink)
+	love.graphics.rectangle(
+	  "fill",
+	  self.stripes.offset - width, -self.stripes.height,
+	  width * 2, self.stripes.height
+	)
 
-    love.graphics.setColor(colors.blue)
-    love.graphics.rectangle(
-      "line", -- draw line for anti aliasing
-      -width - self.stripes.offset, 0,
-      width * 2, self.stripes.height
-    )
-    love.graphics.rectangle(
-      "fill",
-      -width - self.stripes.offset, 0,
-      width * 2, self.stripes.height
-    )
-    love.graphics.pop()
+	love.graphics.setColor(colors.blue)
+	love.graphics.rectangle(
+	  "line", -- draw line for anti aliasing
+	  -width - self.stripes.offset, 0,
+	  width * 2, self.stripes.height
+	)
+	love.graphics.rectangle(
+	  "fill",
+	  -width - self.stripes.offset, 0,
+	  width * 2, self.stripes.height
+	)
+	love.graphics.pop()
 
-    love.graphics.setColor(1, 1, 1, self.heart.scale)
-    love.graphics.draw(self.heart.sprite, 0, 5, self.heart.rot, self.heart.scale, self.heart.scale, 43, 39)
-    love.graphics.pop()
+	love.graphics.setColor(1, 1, 1, self.heart.scale)
+	love.graphics.draw(self.heart.sprite, 0, 5, self.heart.rot, self.heart.scale, self.heart.scale, 43, 39)
+	love.graphics.pop()
   end)
 
   love.graphics.setColor(1, 1, 1, self.alpha)
@@ -353,19 +353,19 @@ function splashlib:draw()
   love.graphics.push()
   love.graphics.setShader(self.textshader)
   love.graphics.draw(
-    self.text.obj,
-    (width  / 2) - (self.text.width   / 2),
-    (height / 2) - (self.text.height  / 2) + (height / 10) + 62
+	self.text.obj,
+	(width  / 2) - (self.text.width   / 2),
+	(height / 2) - (self.text.height  / 2) + (height / 10) + 62
   )
   love.graphics.pop()
 
   love.graphics.push()
   love.graphics.setShader(self.logoshader)
   love.graphics.draw(
-    self.logo.sprite,
-    (width  / 2) - (self.logo.width   / 4),
-    (height / 2) + (self.logo.height  / 4) + (height / 10),
-    0, 0.5, 0.5
+	self.logo.sprite,
+	(width  / 2) - (self.logo.width   / 4),
+	(height / 2) + (self.logo.height  / 4) + (height / 10),
+	0, 0.5, 0.5
   )
   love.graphics.setShader()
   love.graphics.pop()
@@ -378,13 +378,13 @@ end
 
 function splashlib:skip()
   if not self.done then
-    self.done = true
+	self.done = true
 
-    timer.tween(0.3, self, {alpha = 0})
-    timer.after(0.3, function ()
-      timer.clear() -- to be safe
-      if self.onDone then self.onDone() end
-    end)
+	timer.tween(0.3, self, {alpha = 0})
+	timer.after(0.3, function ()
+	  timer.clear() -- to be safe
+	  if self.onDone then self.onDone() end
+	end)
   end
 end
 

@@ -1,3 +1,8 @@
+WINDOW_DEF_WIDTH = 1280
+WINDOW_DEF_HEIGHT = 720
+WINDOW_MIN_WIDTH = 640
+WINDOW_MIN_HEIGHT = 360
+
 function love.conf(t)
 	t.identity = "dead-by-default"			-- The name of the save directory (string)
 	t.appendidentity = false				-- Search files in source directory before save directory (boolean)
@@ -12,16 +17,16 @@ function love.conf(t)
 
 	t.window.title = "Dead by Default"		-- The window title (string)
 	t.window.icon = nil						-- Filepath to an image to use as the window's icon (string)
-	t.window.width = 1280					-- The window width (number)
-	t.window.height = 720					-- The window height (number)
+	t.window.width = WINDOW_DEF_WIDTH		-- The window width (number)
+	t.window.height = WINDOW_DEF_HEIGHT		-- The window height (number)
 	t.window.borderless = true				-- Remove all border visuals from the window (boolean)
 	t.window.resizable = false				-- Let the window be user-resizable (boolean)
-	t.window.minwidth = 640					-- Minimum window width if the window is resizable (number)
-	t.window.minheight = 360				-- Minimum window height if the window is resizable (number)
+	t.window.minwidth = WINDOW_MIN_WIDTH	-- Minimum window width if the window is resizable (number)
+	t.window.minheight = WINDOW_MIN_HEIGHT	-- Minimum window height if the window is resizable (number)
 	t.window.fullscreen = false				-- Enable fullscreen (boolean)
 	t.window.fullscreentype = "exclusive"	-- Choose between "desktop" fullscreen or "exclusive" fullscreen mode (string)
 	t.window.vsync = 1						-- Vertical sync mode (number)
-	t.window.msaa = 4						-- The number of samples to use with multi-sampled antialiasing (number)
+	t.window.msaa = 0						-- The number of samples to use with multi-sampled antialiasing (number)
 	t.window.depth = nil					-- The number of bits per sample in the depth buffer
 	t.window.stencil = nil					-- The number of bits per sample in the stencil buffer
 	t.window.display = 1					-- Index of the monitor to show the window in (number)

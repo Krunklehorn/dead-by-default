@@ -105,7 +105,7 @@ end
 function love.keypressed(key)
 	if key == "m" and humpstate.current() ~= introState then
 		if not lw.getFullscreen() then lw.updateMode(0, 0, { fullscreen = true })
-		else lw.updateMode(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT, { fullscreen = false }) end
+		else lw.updateMode(WINDOW_DEF_WIDTH, WINDOW_DEF_HEIGHT, { fullscreen = false }) end
 
 		love.resize(lg.getDimensions()) -- Force the resize callback
 	elseif key == "kp0" and stopwatch.ticks > NET_ROLLBACK_FRAMES then
