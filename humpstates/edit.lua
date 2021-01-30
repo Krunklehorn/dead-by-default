@@ -52,22 +52,14 @@ function editState:draw(rt)
 	self.grid:push("all")
 
 	world.draw(rt)
-	utils.drawEach(self.handles, self.camera:getNormalizedScale())
 	utils.drawEach(world.triggers)
-
-	if playState.camera then
-		playState.camera:draw() end
-
+	utils.drawEach(self.handles, self.camera:getNormalizedScale())
+	if playState.camera then playState.camera:draw() end
 	utils.drawDebug()
 
 	self.grid:pop()
 
-	--[[if DEBUG_DRAW then
-		lg.push("all")
-			stache.setColor("white", 0.8)
-			stache.printf{40 * UI_SCALE_FLOORED, self.activeTool, 5}
-		lg.pop()
-	end]]
+	self:drawCrosshair()
 end
 
 function editState:mousemoved(x, y, dx, dy, istouch)
@@ -76,16 +68,20 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 	local delta = vec2(dx, dy) / scale
 
 	if lm.isDown(1) and not lm.isDown(2) and not lm.isDown(3) and self.pickHandle then
-		self.pickHandle:drag(mwpos, self.grid:minorInterval())
+		self.pickHandle:drag(mwpos, self.grid:minorInterval(true))
 	elseif lm.isDown(2) and not lm.isDown(1) and not lm.isDown(3) and self.toolState then
+		if lk.isDown("lctrl") then
+			mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
+
 		local delta = mwpos - self.pmwpos
 
-		if lk.isDown("lctrl") then
-			delta = delta:snapped(self.grid:minorInterval()) end
-
-		if self.toolState.type == "circle" then self.toolState.brush.radius = math.max(delta.length, 25)
-		elseif self.toolState.type == "line" then self.toolState.brush.p2 = self.pmwpos + delta
-		elseif self.toolState.type == "box" then self.toolState.brush.star = delta end
+		if self.toolState.type == "circle" then
+			self.toolState.brush.radius = math.max(delta.length, 10)
+		elseif self.toolState.type == "box" then
+			self.toolState.brush.star = delta
+		elseif self.toolState.type == "line" then
+			self.toolState.brush.p2 = self.pmwpos + delta
+		end
 	elseif lm.isDown(3) and not lm.isDown(1) and not lm.isDown(2) then
 		self.camera:move(-delta * self.sensitivity)
 	else
@@ -96,16 +92,17 @@ end
 
 function editState:wheelmoved(x, y)
 	local mwpos = self.camera:getMouseWorld(true)
+	local mspos = vec2(lm.getPosition())
 
 	if y ~= 0 then
 		self.camera:zoom(y < 0 and 0.8 or 1.25) end
 
 	if self.zoomToCursor then
-		mwpos = self.camera:getMouseWorld(true) - mwpos
+		mwpos = self.camera:toWorld(mspos.x, mspos.y, true) - mwpos
 		self.camera:move(-mwpos)
-	else
-		self:mousemoved(lm.getX(), lm.getY(), 0, 0, false)
 	end
+
+	self:mousemoved(mspos.x, mspos.y, 0, 0, false)
 end
 
 function editState:mousepressed(x, y, button)
@@ -145,7 +142,7 @@ function editState:mousepressed(x, y, button)
 			local brush = nil
 
 			if lk.isDown("lctrl") then
-				mwpos = mwpos:snapped(self.grid:minorInterval()) end
+				mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
 
 			for b = 1, #world.brushes do
 				local brush = world.brushes[b]
@@ -195,6 +192,20 @@ function editState:keypressed(key)
 	elseif key == "return" then
 		humpstate.switch(playState)
 	end
+end
+
+function editState:drawCrosshair()
+	local mwpos = self.camera:getMouseWorld(true)
+
+	if lk.isDown("lctrl") then
+		mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
+
+	lg.push("all")
+		lg.translate(self.camera:toScreen(mwpos):split())
+		stache.setColor("white", 0.5)
+		lg.line(-10, 0, 10, 0)
+		lg.line(0, -10, 0, 10)
+	lg.pop()
 end
 
 function editState:addHandles(brush)

@@ -100,7 +100,7 @@ Editor Improvements
 - property editing through a widget system
 - better brush placement options (by corners or by edges w/wo radius etc.)
 - selection groups and lock toggles
-- grid-snapped crosshair
+- grid-snapped crosshair :heavy_check_mark:
 - eyedropper tool
 - color picker
 
