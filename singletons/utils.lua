@@ -437,8 +437,7 @@ function utils.drawTangent(orig, tan, color, alpha)
 	lg.push("all")
 		lg.translate(orig.x, orig.y)
 		stache.setColor(color, alpha)
-		lg.line(0, 0, tan.x, tan.y)
-		lg.line(0, 0, -tan.x, -tan.y)
+		lg.line(-tan.x, -tan.y, tan.x, tan.y)
 	lg.pop()
 end
 
@@ -557,15 +556,13 @@ function utils.floatEquality(a, b)
 	utils.checkArg("a", a, "number", "floatEquality")
 	utils.checkArg("b", b, "number", "floatEquality")
 
-	if not a or not b then return false
-	else return math.abs(a - b) <= FLOAT_THRESHOLD end
+	return math.abs(a - b) <= FLOAT_THRESHOLD
 end
 
 function utils.nearZero(x)
-	utils.checkArg("x", x, "number", "floatEquality")
+	utils.checkArg("x", x, "number", "nearZero")
 
-	if not a or not b then return false
-	else return math.abs(x) <= FLOAT_THRESHOLD end
+	return math.abs(x) <= FLOAT_THRESHOLD
 end
 
 function utils.sign(x) return math.abs(x) <= FLOAT_THRESHOLD and 0 or (x < 0 and -1 or 1) end
