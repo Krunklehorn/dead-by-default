@@ -30,6 +30,8 @@ function vec3:__index(key)
 										 math.abs(self.y) <= FLOAT_THRESHOLD and
 										 math.abs(self.z) <= FLOAT_THRESHOLD
 	elseif key == "eqZero" then return self.x == 0 and self.y == 0 and self.z == 0
+	elseif key == "ltZero" then return self.x < 0 and self.y < 0 and self.z < 0
+	elseif key == "leZero" then return self.x <= 0 and self.y <= 0 and self.z <= 0
 	elseif key == "table" then return { self.x, self.y, self.z }
 	elseif key == "xy" then return vec2.new(self.x, self.y)
 	elseif key == "copy" then return new(self)

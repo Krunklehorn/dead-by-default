@@ -121,12 +121,9 @@ function BoxCollider:getCastBounds()
 end
 
 function BoxCollider:pick(point)
-	-- https://www.iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
-	-- make SELF a box and OTHER a point
-	local pos = (point - self.pos):rotated(-self.angle)
-	local delta = pos.abs - self.hdims
+	utils.checkArg("point", point, "vec2", "BoxCollider:pick")
 
-	return delta.x <= 0 and delta.y <= 0
+	return ((point - self.pos):rotated(-self.angle).abs - self.hdims).leZero
 end
 
 function BoxCollider:overlap(other)

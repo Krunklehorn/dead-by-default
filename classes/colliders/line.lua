@@ -96,26 +96,22 @@ function LineCollider:pick(point)
 	utils.checkArg("point", point, "vec2", "LineCollider:pick")
 
 	local offset = point - self.p1
-
-	scalar = self.delta:dot(offset) / self.delta.length2
+	local scalar = self.delta:dot(offset) / self.delta.length2
 
 	if scalar <= 0 then
-		if offset.x == 0 and offset.y == 0 then
-			return -self.radius, vec2.new() end
+		if offset.eqZero then
+			return true end
 
 		clmpdist = offset.length
-		clmpdir = vec2.new(offset.x / clmpdist, offset.y / clmpdist)
 	elseif scalar >= 1 then
 		offset = point - self.p2
 
-		if offset.x == 0 and offset.y == 0 then
-			return -self.radius, vec2.new() end
+		if offset.eqZero then
+			return true end
 
 		clmpdist = offset.length
-		clmpdir = vec2.new(offset.x / clmpdist, offset.y / clmpdist)
 	else
-		clmpdist = (point - (self.p1 + self.delta * utils.clamp01(scalar))).length
-		clmpdir = self.normal * utils.sign(self.delta:cross(offset))
+		clmpdist = (point - (self.p1 + self.delta * scalar)).length
 	end
 
 	return clmpdist - self.radius <= 0

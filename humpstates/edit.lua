@@ -2,13 +2,21 @@ editState = {
 	camera = nil,
 	grid = nil,
 	handles = {},
+	selection = nil,
 	pickHandle = nil,
-	activeTool = "circle",
+	activeTool = "none",
 	toolState = nil,
 	pmwpos = nil,
 	sensitivity = 1,
 	zoomToCursor = true
 }
+
+local function isDownPrimary() return lm.isDown(1) and not lm.isDown(2) and not lm.isDown(3) end
+local function isDownSecondary() return lm.isDown(2) and not lm.isDown(1) and not lm.isDown(3) end
+local function isDownTertiary() return lm.isDown(3) and not lm.isDown(1) and not lm.isDown(2) end
+local function isButtonPrimary(button) return button == 1 and not lm.isDown(2) and not lm.isDown(3) end
+local function isButtonSecondary(button) return button == 2 and not lm.isDown(1) and not lm.isDown(3) end
+local function isButtonTertiary(button) return button == 3 and not lm.isDown(1) and not lm.isDown(2) end
 
 function editState:init()
 	self.camera = Camera{scale = 0.5 * 0.8 ^ 3, pblend = 0.75, ablend = 0.75, sblend = 0.75}
@@ -38,8 +46,6 @@ function editState:enter(from)
 		self.camera.atarget = 0
 		self.camera.starget = 0.5 * 0.8 ^ 3
 	end
-
-	self:refreshHandles()
 end
 
 function editState:update(tl)
@@ -54,90 +60,64 @@ function editState:draw(rt)
 	world.draw(rt)
 	utils.drawEach(world.triggers)
 	utils.drawEach(self.handles, self.camera:getNormalizedScale())
-	if playState.camera then playState.camera:draw() end
+
+	if playState.camera then
+		playState.camera:draw() end
+
 	utils.drawDebug()
 
 	self.grid:pop()
 
-	self:drawCrosshair()
-end
-
-function editState:mousemoved(x, y, dx, dy, istouch)
-	local scale = self.camera:getNormalizedScale()
-	local mwpos = self.camera:toWorld(x, y)
-	local delta = vec2(dx, dy) / scale
-
-	if lm.isDown(1) and not lm.isDown(2) and not lm.isDown(3) and self.pickHandle then
-		self.pickHandle:drag(mwpos, self.grid:minorInterval(true))
-	elseif lm.isDown(2) and not lm.isDown(1) and not lm.isDown(3) and self.toolState then
-		if lk.isDown("lctrl") then
-			mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
-
-		local delta = mwpos - self.pmwpos
-
-		if self.toolState.type == "circle" then
-			self.toolState.brush.radius = math.max(delta.length, 10)
-		elseif self.toolState.type == "box" then
-			self.toolState.brush.star = delta
-		elseif self.toolState.type == "line" then
-			self.toolState.brush.p2 = self.pmwpos + delta
-		end
-	elseif lm.isDown(3) and not lm.isDown(1) and not lm.isDown(2) then
-		self.camera:move(-delta * self.sensitivity)
-	else
-		for h = 1, #self.handles do
-			self.handles[h]:pick(mwpos, scale, "hover") end
-	end
-end
-
-function editState:wheelmoved(x, y)
-	local mwpos = self.camera:getMouseWorld(true)
-	local mspos = vec2(lm.getPosition())
-
-	if y ~= 0 then
-		self.camera:zoom(y < 0 and 0.8 or 1.25) end
-
-	if self.zoomToCursor then
-		mwpos = self.camera:toWorld(mspos.x, mspos.y, true) - mwpos
-		self.camera:move(-mwpos)
-	end
-
-	self:mousemoved(mspos.x, mspos.y, 0, 0, false)
+	if lk.isDown("lctrl") and
+		not (isDownPrimary() and self.pickHandle) and
+		not isDownTertiary() then
+			self:drawCrosshair() end
 end
 
 function editState:mousepressed(x, y, button)
 	local scale = self.camera:getNormalizedScale()
 	local mwpos = self.camera:toWorld(x, y)
 
-	if button == 1 and not lm.isDown(2) and not lm.isDown(3) and not self.pickHandle then
+	if isButtonPrimary(button) and not self.pickHandle then
 		for h = 1, #self.handles do
-			local handle = self.handles[h]
+			local handle = self.handles[h]:pick(mwpos, scale, "select")
 
-			if not self.pickHandle then
-				self.pickHandle = handle:pick(mwpos, scale, "pick")
-			else handle:pick(mwpos, scale, "idle") end
+			if handle then
+				self.pickHandle = handle
+				break
+			end
 		end
-	elseif button == 2 and not lm.isDown(1) and not lm.isDown(3) and not self.toolState then
-		local delete = nil
+
+		if not self.pickHandle then
+			local height = nil
+			local selection = nil
+
+			for b = 1, #world.brushes do
+				local brush = world.brushes[b]
+
+				if brush:pick(mwpos) and (not height or brush.height > height) then
+					height = brush.height
+					selection = brush
+				end
+			end
+
+			self:select(selection)
+			self.pmwpos = mwpos
+		end
+	elseif isButtonSecondary(button) and not self.toolState then
+		local delete = false
 
 		for h = 1, #self.handles do
 			local handle = self.handles[h]
 
-			if not handle:instanceOf(PointHandle) then
-				goto continue end
-
-			if not delete then
-				if handle:pick(mwpos, scale, "delete") then
-					delete = handle end
-			else handle:pick(mwpos, scale, "idle") end
-
-			::continue::
+			if handle:instanceOf(PointHandle) and
+			   handle:pick(mwpos, scale, "delete") then
+				   delete = true end
 		end
 
 		if delete then
-			world.removeBrush(delete.target)
-			self:refreshHandles()
-		else
+			self:delete()
+		elseif self.activeTool ~= "none" then
 			local height = nil
 			local brush = nil
 
@@ -158,35 +138,60 @@ function editState:mousepressed(x, y, button)
 			elseif self.activeTool == "line" then brush = world.addBrush(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height}) end
 
 			self.toolState = { type = self.activeTool, brush = brush  }
-			self:addHandles(brush)
+			self:select(brush)
 			self.pmwpos = mwpos
+		else
+			self:deselect()
 		end
-	elseif button == 3 and not lm.isDown(1) and not lm.isDown(2) then
-		self.pmwpos = mwpos
+	elseif isButtonTertiary(button) then
 		lm.setRelativeMode(true)
+		self.pmwpos = mwpos
 	end
 end
 
 function editState:mousereleased(x, y, button)
-	if button == 1 and not lm.isDown(2) and not lm.isDown(3) and self.pickHandle then
-		self.pickHandle.state = "idle"
-		self.pickHandle = nil
-	elseif button == 2 and not lm.isDown(1) and not lm.isDown(3) and self.toolState then
-		self.toolState = nil
-	elseif button == 3 and not lm.isDown(1) and not lm.isDown(2) then
+	if isButtonPrimary(button) then self:clearState()
+	elseif isButtonSecondary(button) then self:clearState()
+	elseif isButtonTertiary(button) then
 		lm.setRelativeMode(false)
 		lm.setPosition(self.camera:toScreen(self.pmwpos):split())
+
+		self:clearState()
+	end
+end
+
+function editState:mousemoved(x, y, dx, dy, istouch)
+	local scale = self.camera:getNormalizedScale()
+	local mwpos = self.camera:toWorld(x, y)
+	local delta = vec2(dx, dy) / scale
+
+	if self.pickHandle then
+		self.pickHandle:drag(mwpos, self.grid:minorInterval(true))
+	elseif self.toolState then
+		if lk.isDown("lctrl") then
+			mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
+
+		local delta = mwpos - self.pmwpos
+
+		if self.toolState.type == "circle" then self.toolState.brush.radius = math.max(delta.length, 10)
+		elseif self.toolState.type == "box" then self.toolState.brush.star = delta
+		elseif self.toolState.type == "line" then self.toolState.brush.p2 = self.pmwpos + delta end
+	elseif lm.isDown(3) then
+		self.camera:move(-delta * self.sensitivity)
+	else
+		for h = 1, #self.handles do
+			self.handles[h]:pick(mwpos, scale, "hover") end
 	end
 end
 
 function editState:keypressed(key)
-	if key == "1" then self.activeTool = "circle"
-	elseif key == "2" then self.activeTool = "box"
-	elseif key == "3" then self.activeTool = "line"
+	if key == "1" then self.activeTool = "none"
+	elseif key == "2" then self.activeTool = "circle"
+	elseif key == "3" then self.activeTool = "box"
+	elseif key == "4" then self.activeTool = "line"
+	elseif key == "delete" then self:delete()
 	elseif key == "j" then world.save()
-	elseif key == "k" then
-		world.load()
-		self:refreshHandles()
+	elseif key == "k" then world.load()
 	elseif key == "backspace" then
 		utils.switch(titleState)
 	elseif key == "return" then
@@ -194,11 +199,25 @@ function editState:keypressed(key)
 	end
 end
 
+function editState:wheelmoved(x, y)
+	local mwpos = self.camera:getMouseWorld(true)
+	local mspos = vec2(lm.getPosition())
+
+	if y ~= 0 then
+		self.camera:zoom(y < 0 and 0.8 or 1.25) end
+
+	if self.zoomToCursor then
+		mwpos = self.camera:toWorld(mspos.x, mspos.y, true) - mwpos
+		self.camera:move(-mwpos)
+	end
+
+	self:mousemoved(mspos.x, mspos.y, 0, 0, false)
+end
+
 function editState:drawCrosshair()
 	local mwpos = self.camera:getMouseWorld(true)
 
-	if lk.isDown("lctrl") then
-		mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
+	mwpos = mwpos:snapped(self.grid:minorInterval(true))
 
 	lg.push("all")
 		lg.translate(self.camera:toScreen(mwpos):split())
@@ -208,7 +227,30 @@ function editState:drawCrosshair()
 	lg.pop()
 end
 
+function editState:select(brush)
+	utils.checkArg("brush", brush, "brush", "editState:select", true)
+
+	if brush then
+		self:setHandles(brush)
+		self.selection = brush
+	else self:deselect() end
+end
+
+function editState:deselect()
+	self:clearHandles()
+	self.selection = nil
+end
+
+function editState:delete()
+	if self.selection then
+		world.removeBrush(self.selection)
+		self:deselect()
+	end
+end
+
 function editState:addHandles(brush)
+	utils.checkArg("brush", brush, "brush", "editState:addHandles")
+
 	if brush:instanceOf(CircleBrush) then
 		self.handles[#self.handles + 1] = PointHandle(brush, "pos")
 	elseif brush:instanceOf(BoxBrush) then
@@ -221,9 +263,23 @@ function editState:addHandles(brush)
 	end
 end
 
-function editState:refreshHandles()
-	self.handles = utils.clear(self.handles)
+function editState:setHandles(brush)
+	utils.checkArg("brush", brush, "brush", "editState:replaceHandles")
 
-	for b = 1, #world.brushes do
-		self:addHandles(world.brushes[b]) end
+	self:clearHandles()
+	self:addHandles(brush)
+end
+
+function editState:clearHandles()
+	self.handles = utils.clear(self.handles)
+end
+
+function editState:clearState()
+	if self.pickHandle then
+		self.pickHandle.state = "idle"
+		self.pickHandle = nil
+	end
+
+	self.toolState = nil
+	self.pmwpos = nil
 end

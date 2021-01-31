@@ -107,6 +107,14 @@ function Brush.batchSDF(brushes, entities)
 					lg.setCanvas(SDF_CANVAS)
 
 					nCircles, nBoxes, nLines, nLights = 0, 0, 0, 0
+
+					if humpstate.current() == editState then
+						if editState.selection then
+							lg.setBlendMode("alpha")
+							editState.selection:draw("selection")
+							lg.setBlendMode("replace")
+						end
+					end
 				end
 			end
 		lg.setCanvas()

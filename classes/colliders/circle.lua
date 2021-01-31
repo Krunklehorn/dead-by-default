@@ -81,11 +81,9 @@ function CircleCollider:getCastBounds()
 end
 
 function CircleCollider:pick(point)
-	-- https://www.iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
-	-- make SELF a circle and OTHER a point
-	local offset = point - self.pos
+	utils.checkArg("point", point, "vec2", "CircleCollider:pick")
 
-	return offset.length - self.radius <= 0
+	return (point - self.pos).length - self.radius <= 0
 end
 
 function CircleCollider:overlap(other)

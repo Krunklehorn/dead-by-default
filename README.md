@@ -79,13 +79,15 @@ When the "game" itself is ready to be played...
 
 | Edit ||
 | :---: | :---: |
-| Mouse 1 | Move |
+| Mouse 1 | Select / Move |
 | Mouse 2 | Create / Delete |
 | Mouse 3 | Pan |
 | Wheel | Zoom |
-| 1 | Circle |
-| 2 | Box |
-| 3 | Line |
+| 1 | No Tool |
+| 2 | Circle |
+| 3 | Box |
+| 4 | Line |
+| Del | Delete |
 | J | Save |
 | K | Load |
 | LCtrl | Snap |

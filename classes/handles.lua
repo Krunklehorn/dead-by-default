@@ -2,7 +2,7 @@ Handle = class("Handle", {
 	colors = {
 		idle = { 1, 1, 1 },
 		hover = { 1, 1, 0 },
-		pick = { 1, 0.5, 0 }
+		select = { 1, 0.5, 0 }
 	},
 	radius = 16,
 	scaleMin = 2,
@@ -72,7 +72,7 @@ function PointHandle:pick(mwpos, scale, state)
 	if mwpos.x >= left and mwpos.x <= right and
 	   mwpos.y >= top and mwpos.y <= bottom then
 		if state then
-			if state == "pick" then
+			if state == "select" then
 				Handle.ppos = pos.copy
 				Handle.pmwpos = mwpos
 			end
@@ -147,7 +147,7 @@ function VectorHandle:pick(mwpos, scale, state)
 
 	if (pos + delta - mwpos).length <= radius then
 		if state then
-			if state == "pick" then
+			if state == "select" then
 				Handle.pdelta = delta.copy
 				Handle.pmwpos = mwpos
 			end

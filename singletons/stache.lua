@@ -19,7 +19,8 @@ local stache = {
 		cyan = { 0, 1, 1 },
 		magenta = { 1, 0, 1 },
 		yellow = { 1, 1, 0 },
-		trigger = { 1, 1, 0, 0.1 }
+		trigger = { 1, 1, 0, 0.1 },
+		selection = { 1, 1, 1, 0.05 }
 	},
 	shaders = {},
 	sprites = {}

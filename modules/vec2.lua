@@ -45,6 +45,8 @@ function vec2:__index(key)
 	elseif key == "nearZero" then return math.abs(self.x) <= FLOAT_THRESHOLD and
 										 math.abs(self.y) <= FLOAT_THRESHOLD
 	elseif key == "eqZero" then return self.x == 0 and self.y == 0
+	elseif key == "ltZero" then return self.x < 0 and self.y < 0
+	elseif key == "leZero" then return self.x <= 0 and self.y <= 0
 	elseif key == "table" then return { self.x, self.y }
 	elseif key == "xy" or key == "copy" then return new(self)
 	else return rawget(vec2, key) end
