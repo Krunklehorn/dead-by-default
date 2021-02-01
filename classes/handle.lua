@@ -18,9 +18,8 @@ function PointHandle:init(target, pkey)
 	utils.checkArg("target", target, "indexable", "PointHandle:init")
 	utils.checkArg("pkey", pkey, "string", "PointHandle:init")
 
-	if not vec2.isVec2(target[pkey]) then
-		utils.formatError("PointHandle:init() called with a 'pkey' argument that doesn't point to a vector: %q, %q", target, pkey)
-	end
+	if not utils.isVector(target[pkey]) then
+		utils.formatError("PointHandle:init() called with a 'pkey' argument that doesn't point to a vector: %q, %q", target, pkey) end
 
 	self.state = "idle"
 	self.target = target
@@ -30,7 +29,7 @@ end
 function PointHandle:draw(scale)
 	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
 
-	local pos = self.target[self.pkey]
+	local pos = self.target[self.pkey].xy
 	local color = Handle.colors[self.state]
 	local radius = Handle.radius / scale
 	local x, y, d
@@ -56,13 +55,13 @@ function PointHandle:drag(mwpos, interval)
 	if lk.isDown("lctrl") then
 		pos = pos:snapped(interval) end
 
-	self.target[self.pkey] = pos
+	self.target[self.pkey].xy = pos
 end
 
 function PointHandle:pick(mwpos, scale, state)
 	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
 
-	local pos = self.target[self.pkey]
+	local pos = self.target[self.pkey].xy
 	local hlength = Handle.radius / scale
 	local left = pos.x - hlength
 	local right = pos.x + hlength
@@ -98,10 +97,10 @@ function VectorHandle:init(target, pkey, dkey)
 	local pos = target[pkey]
 	local delta = target[dkey]
 
-	if not vec2.isVec2(pos) then
+	if not utils.isVector(pos) then
 		utils.formatError("VectorHandle:init() called with a 'pkey' argument that doesn't point to a vector: %q, %q", target, pkey)
 	elseif not vec2.isVec2(delta) then
-		utils.formatError("VectorHandle:init() called with a 'dkey' argument that doesn't point to a vector: %q, %q", target, dkey)
+		utils.formatError("VectorHandle:init() called with a 'dkey' argument that doesn't point to a vec2: %q, %q", target, dkey)
 	end
 
 	self.state = "idle"
@@ -113,7 +112,7 @@ end
 function VectorHandle:draw(scale)
 	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
 
-	local pos = self.target[self.pkey]
+	local pos = self.target[self.pkey].xy
 	local tip = pos + self.target[self.dkey]
 	local color = Handle.colors[self.state]
 	local radius = Handle.radius / scale
@@ -142,7 +141,7 @@ end
 function VectorHandle:pick(mwpos, scale, state)
 	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
 
-	local pos = self.target[self.pkey]
+	local pos = self.target[self.pkey].xy
 	local delta = self.target[self.dkey]
 	local radius = Handle.radius / scale
 
@@ -166,18 +165,25 @@ end
 
 RadiusHandle = Handle:extend("RadiusHandle")
 
-function RadiusHandle:init(target)
+function RadiusHandle:init(target, rkey)
 	utils.checkArg("target", target, "indexable", "RadiusHandle:init")
+	utils.checkArg("rkey", rkey, "string", "RadiusHandle:init")
+
+	local radius = target[rkey]
+
+	if type(radius) ~= "number" then
+		utils.formatError("RadiusHandle:init() called with an 'rkey' argument that doesn't point to a number: %q, %q", target, rkey) end
 
 	self.state = "idle"
 	self.target = target
+	self.rkey = rkey
 end
 
 function RadiusHandle:draw(scale)
 	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
 
 	local target = self.target
-	local radius = target.radius
+	local radius = target[self.rkey]
 
 	lg.push("all")
 		stache.setColor(Handle.colors[self.state], 1)
@@ -215,6 +221,10 @@ function RadiusHandle:draw(scale)
 				lg.line(0, -radius, -length, -radius)
 				lg.arc("line", "open", 0, 0, radius, -math.pi / 2, math.pi / 2)
 			lg.pop()
+		elseif self.target:instanceOf(Light) then
+			local pos = target.pos
+
+			lg.circle("line", pos.x, pos.y, radius)
 		end
 	lg.pop()
 end
@@ -223,7 +233,7 @@ function RadiusHandle:drag(mwpos, interval)
 	if lk.isDown("lctrl") then
 		mwpos = mwpos:snapped(interval) end
 
-	self.target.radius = math.max(self.target:pick(mwpos) + self.target.radius, 1)
+	self.target[self.rkey] = math.max(self.target:pick(mwpos) + self.target[self.rkey], 1)
 end
 
 function RadiusHandle:pick(mwpos, scale, state)

@@ -2,7 +2,7 @@ local ffi = require "ffi"
 
 ffi.cdef[[
 	typedef struct _Vault {
-		vec3 pos;
+		Entity;
 		vec2 vel;
 		double angle;
 		unsigned int hwidth;

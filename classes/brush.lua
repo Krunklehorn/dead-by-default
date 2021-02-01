@@ -57,8 +57,8 @@ function Brush.batchSDF(brushes, entities)
 				local brush = brushes[b]
 				local next = brushes[b + 1]
 
-				if nCircles >= SDF_MAX_BRUSHES or nBoxes >= SDF_MAX_BRUSHES or nLines >= SDF_MAX_BRUSHES or nLights >= SDF_MAX_LIGHTS then
-					utils.formatError("Brush.batchSDF() exceeded a maximum for one or more payloads: %s, %s, %s", nCircles, nBoxes, nLines, nLights) end
+				if nCircles >= SDF_MAX_BRUSHES or nBoxes >= SDF_MAX_BRUSHES or nLines >= SDF_MAX_BRUSHES then
+					utils.formatError("Brush.batchSDF() attempted to exceed a maximum for one or more SDF payloads: %s, %s, %s", nCircles, nBoxes, nLines) end
 
 				if brush:instanceOf(CircleBrush) then
 					local pos = camera:toScreen(brush.pos)
@@ -86,6 +86,9 @@ function Brush.batchSDF(brushes, entities)
 					for e = 1, #entities do
 						local entity = entities[e]
 
+						if nLights >= SDF_MAX_LIGHTS then
+							utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %s", nLights) end
+
 						if entity:instanceOf(Light) and entity.pos.z == brush.height then
 							local pos = camera:toScreen(entity.pos.xy)
 
@@ -110,13 +113,17 @@ function Brush.batchSDF(brushes, entities)
 
 					nCircles, nBoxes, nLines, nLights = 0, 0, 0, 0
 
+					lg.setBlendMode("alpha")
 					if humpstate.current() == editState then
-						if editState.selection then
-							lg.setBlendMode("alpha")
-							editState.selection:draw("selection")
-							lg.setBlendMode("replace")
+						for o = 1, #editState.selection do
+							local obj = editState.selection[o]
+
+							if (Brush.isBrush(obj) and obj.height == brush.height) or
+							   (Entity.isEntity(obj) and obj.pos.z == brush.height) then
+								obj:draw("selection") end
 						end
 					end
+					lg.setBlendMode("replace")
 				end
 			end
 		lg.setCanvas()

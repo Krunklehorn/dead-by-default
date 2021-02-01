@@ -1,8 +1,8 @@
 editState = {
 	camera = nil,
 	grid = nil,
+	selection = {},
 	handles = {},
-	selection = nil,
 	pickHandle = nil,
 	activeTool = "none",
 	toolState = nil,
@@ -73,10 +73,14 @@ function editState:draw(rt)
 
 	self.grid:pop()
 
-	if lk.isDown("lctrl") and
-		not (isDownPrimary() and self.pickHandle) and
-		not isDownTertiary() then
-			self:drawCrosshair() end
+	if (self.toolState or self.activeTool ~= "none") and
+		not isDownPrimary() and not self.pickHandle and
+		not isDownTertiary() and lk.isDown("lctrl") then
+			self:drawCrosshair()
+	elseif isDownPrimary() and not self.pickHandle and
+		   self.toolState and self.toolState.type == "select" then
+			   self:drawSelection()
+	end
 end
 
 function editState:mousepressed(x, y, button)
@@ -93,22 +97,7 @@ function editState:mousepressed(x, y, button)
 			end
 		end
 
-		if not self.pickHandle then
-			local height = nil
-			local selection = nil
-
-			for b = 1, #world.brushes do
-				local brush = world.brushes[b]
-
-				if brush:pick(mwpos) <= 0 and (not height or brush.height > height) then
-					height = brush.height
-					selection = brush
-				end
-			end
-
-			self:select(selection)
-			self.pmwpos = mwpos
-		end
+		self.pmwpos = mwpos
 	elseif isButtonSecondary(button) and not self.toolState then
 		local delete = false
 
@@ -124,7 +113,7 @@ function editState:mousepressed(x, y, button)
 			self:delete()
 		elseif self.activeTool ~= "none" then
 			local height = nil
-			local brush = nil
+			local obj = nil
 
 			if lk.isDown("lctrl") then
 				mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
@@ -138,14 +127,17 @@ function editState:mousepressed(x, y, button)
 
 			height = height and height + 16 or 128
 
-			if self.activeTool == "circle" then brush = world.addBrush(CircleBrush, { pos = mwpos, radius = 25, height = height })
-			elseif self.activeTool == "box" then brush = world.addBrush(BoxBrush, { pos = mwpos, hwidth = 25, height = height})
-			elseif self.activeTool == "line" then brush = world.addBrush(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height}) end
+			if self.activeTool == "circle" then obj = world.addBrush(CircleBrush, { pos = mwpos, radius = 25, height = height })
+			elseif self.activeTool == "box" then obj = world.addBrush(BoxBrush, { pos = mwpos, hwidth = 25, height = height})
+			elseif self.activeTool == "line" then obj = world.addBrush(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height})
+			elseif self.activeTool == "light" then obj = world.addEntity(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = 25 })
+			elseif self.activeTool == "vault" then obj = world.addEntity(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
 
-			self.toolState = { type = self.activeTool, brush = brush  }
-			self:select(brush)
+			self.toolState = { type = self.activeTool, obj = obj  }
+			self:setSelect(brush)
 			self.pmwpos = mwpos
 		else
+			-- TODO: widget menu goes here!
 			self:deselect()
 		end
 	elseif isButtonTertiary(button) then
@@ -155,7 +147,37 @@ function editState:mousepressed(x, y, button)
 end
 
 function editState:mousereleased(x, y, button)
-	if isButtonPrimary(button) then self:clearState()
+	if isButtonPrimary(button) then
+		if not self.pickHandle and not self.toolState then
+			local mwpos = self.camera:toWorld(x, y)
+			local height = nil
+			local selection = nil
+
+			for b = 1, #world.brushes do
+				local brush = world.brushes[b]
+
+				if brush:pick(mwpos) <= 0 and (not height or brush.height >= height) then
+					height = brush.height
+					selection = brush
+				end
+			end
+
+			height = nil
+
+			for e = 1, #world.entities do
+				local entity = world.entities[e]
+
+				if not entity:instanceOf(Light) and entity:pick(mwpos) <= 0 and (not height or entity.pos.z >= height) then
+					height = entity.pos.z
+					selection = entity
+				end
+			end
+
+			if lk.isDown("lctrl") then self:flipSelect(selection)
+			else self:setSelect(selection) end
+		end
+
+		self:clearState()
 	elseif isButtonSecondary(button) then self:clearState()
 	elseif isButtonTertiary(button) then
 		lm.setRelativeMode(false)
@@ -173,14 +195,44 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 	if self.pickHandle then
 		self.pickHandle:drag(mwpos, self.grid:minorInterval(true))
 	elseif self.toolState then
-		if lk.isDown("lctrl") then
-			mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
-
+		local toolType = self.toolState.type
 		local delta = mwpos - self.pmwpos
 
-		if self.toolState.type == "circle" then self.toolState.brush.radius = math.max(delta.length, 25)
-		elseif self.toolState.type == "box" then self.toolState.brush.star = delta
-		elseif self.toolState.type == "line" then self.toolState.brush.p2 = self.pmwpos + delta end
+		if toolType == "select" then
+			local selection = {}
+			local p1 = vec2(math.min(self.pmwpos.x, mwpos.x), math.min(self.pmwpos.y, mwpos.y))
+			local p2 = vec2(math.max(self.pmwpos.x, mwpos.x), math.max(self.pmwpos.y, mwpos.y))
+
+			for b = 1, #world.brushes do
+				local brush = world.brushes[b]
+
+				if brush:instanceOf(CircleBrush) or brush:instanceOf(BoxBrush) then
+					if utils.AABBContains(p1, p2, brush.pos) then
+						selection[#selection + 1] = brush end
+				elseif brush:instanceOf(LineBrush) then
+					if utils.AABBContains(p1, p2, brush.p1) or
+					   utils.AABBContains(p1, p2, brush.p2) then
+						   selection[#selection + 1] = brush end
+				end
+			end
+
+			for e = 1, #world.entities do
+				local entity = world.entities[e]
+
+				if entity:instanceOf(Light) or entity:instanceOf(Vault) then
+					if utils.AABBContains(p1, p2, entity.pos) then
+						selection[#selection + 1] = entity end
+				end
+			end
+
+			self:setSelect(selection)
+		elseif toolType == "circle" then self.toolState.obj.radius = math.max(delta.length, 25)
+		elseif toolType == "box" then self.toolState.obj.star = delta
+		elseif toolType == "line" then self.toolState.obj.p2 = self.pmwpos + delta
+		elseif toolType == "light" then self.toolState.obj.range = math.max(delta.length, 25)
+		elseif toolType == "vault" then self.toolState.obj.forward = delta end
+	elseif lm.isDown(1) then
+		self.toolState = { type = "select" }
 	elseif lm.isDown(3) then
 		self.camera:move(-delta * self.sensitivity)
 	else
@@ -194,6 +246,8 @@ function editState:keypressed(key)
 	elseif key == "2" then self.activeTool = "circle"
 	elseif key == "3" then self.activeTool = "box"
 	elseif key == "4" then self.activeTool = "line"
+	elseif key == "5" then self.activeTool = "light"
+	elseif key == "6" then self.activeTool = "vault"
 	elseif key == "delete" then self:delete()
 	elseif key == "j" then world.save()
 	elseif key == "k" then world.load()
@@ -202,7 +256,7 @@ function editState:keypressed(key)
 	elseif key == "return" then
 		humpstate.switch(playState)
 	elseif key == "escape" then
-		if self.selection then self:deselect()
+		if #self.selection ~= 0 then self:deselect()
 		else le.quit() end
 	end
 end
@@ -235,53 +289,168 @@ function editState:drawCrosshair()
 	lg.pop()
 end
 
-function editState:select(brush)
-	utils.checkArg("brush", brush, "brush", "editState:select", true)
+function editState:drawSelection()
+	local mwpos = self.camera:getMouseWorld(true)
+	local mspos, pmspos
 
-	if brush then
-		self:setHandles(brush)
-		self.selection = brush
+	mspos = self.camera:toScreen(mwpos)
+	pmspos = self.camera:toScreen(self.pmwpos)
+
+	lg.push("all")
+		stache.setColor("white", 1)
+		lg.rectangle("line", pmspos.x, pmspos.y, (mspos - pmspos):split())
+		stache.setColor("white", 0.5)
+		lg.rectangle("fill", pmspos.x, pmspos.y, (mspos - pmspos):split())
+	lg.pop()
+end
+
+function editState:select(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:select", true)
+
+	if obj then
+		if Brush.isBrush(obj) or Entity.isEntity(obj) then
+			self:addHandles(obj)
+			self.selection[#self.selection + 1] = obj
+			self.selection[obj] = true
+		else
+			for o = 1, #obj do
+				self:select(obj[o]) end
+		end
 	else self:deselect() end
 end
 
-function editState:deselect()
-	self:clearHandles()
-	self.selection = nil
+function editState:deselect(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:deselect", true)
+
+	if obj then
+		if Brush.isBrush(obj) or Entity.isEntity(obj) then
+			for o = 1, #self.selection do
+				if obj == self.selection[o] then
+					table.remove(self.selection, o)
+					o = o - 1
+				end
+			end
+
+			self.selection[obj] = nil
+			self:removeHandles(obj)
+		else
+			for o = 1, #obj do
+				self:deselect(obj[o]) end
+		end
+	else
+		self:clearHandles()
+		utils.clear(self.selection)
+	end
+end
+
+function editState:setSelect(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:setSelect", true)
+
+	self:deselect()
+	self:select(obj)
+end
+
+function editState:addSelect(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:addSelect", true)
+
+	if obj then
+		if Brush.isBrush(obj) or Entity.isEntity(obj) then
+			local found = false
+
+			for o = 1, #self.selection do
+				if obj == self.selection[o] then
+					found = true
+					break
+				end
+			end
+
+			if not found then
+				self:select(obj) end
+		else
+			for o = 1, #obj do
+				self:addSelect(obj[o]) end
+		end
+	end
+end
+
+function editState:flipSelect(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:flipSelect", true)
+
+	if obj then
+		if Brush.isBrush(obj) or Entity.isEntity(obj) then
+			local found = false
+
+			for o = 1, #self.selection do
+				if obj == self.selection[o] then
+					found = true
+					break
+				end
+			end
+
+			if found then self:deselect(obj)
+			else self:select(obj) end
+		else
+			for o = 1, #obj do
+				self:flipSelect(obj[o]) end
+		end
+	end
 end
 
 function editState:delete()
-	if self.selection then
-		world.removeBrush(self.selection)
-		self:deselect()
+	for o = 1, #self.selection do
+		local obj = self.selection[o]
+
+		if Brush.isBrush(obj) then
+			world.removeBrush(obj)
+		elseif Entity.isEntity(obj) then
+			world.removeEntity(obj)
+		end
+	end
+
+	self:deselect()
+end
+
+function editState:addHandles(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:addHandles")
+
+	if Brush.isBrush(obj) then
+		if obj:instanceOf(CircleBrush) then
+			self.handles[#self.handles + 1] = PointHandle(obj, "pos")
+		elseif obj:instanceOf(BoxBrush) then
+			self.handles[#self.handles + 1] = PointHandle(obj, "pos")
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "bow")
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "star")
+		elseif obj:instanceOf(LineBrush) then
+			self.handles[#self.handles + 1] = PointHandle(obj, "p1")
+			self.handles[#self.handles + 1] = PointHandle(obj, "p2")
+		end
+
+		self.handles[#self.handles + 1] = RadiusHandle(obj, "radius")
+	elseif Entity.isEntity(obj) then
+		self.handles[#self.handles + 1] = PointHandle(obj, "pos")
+
+		if obj:instanceOf(Light) then
+			self.handles[#self.handles + 1] = RadiusHandle(obj, "range")
+		elseif obj:instanceOf(Vault) then
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "forward")
+		end
 	end
 end
 
-function editState:addHandles(brush)
-	utils.checkArg("brush", brush, "brush", "editState:addHandles")
+function editState:removeHandles(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:removeHandles")
 
-	if brush:instanceOf(CircleBrush) then
-		self.handles[#self.handles + 1] = PointHandle(brush, "pos")
-	elseif brush:instanceOf(BoxBrush) then
-		self.handles[#self.handles + 1] = VectorHandle(brush, "pos", "bow")
-		self.handles[#self.handles + 1] = VectorHandle(brush, "pos", "star")
-		self.handles[#self.handles + 1] = PointHandle(brush, "pos")
-	elseif brush:instanceOf(LineBrush) then
-		self.handles[#self.handles + 1] = PointHandle(brush, "p1")
-		self.handles[#self.handles + 1] = PointHandle(brush, "p2")
+	local h = 1
+
+	while h <= #self.handles do
+		if obj == self.handles[h].target then
+			table.remove(self.handles, h)
+		else h = h + 1 end
 	end
-
-	self.handles[#self.handles + 1] = RadiusHandle(brush, "radius")
-end
-
-function editState:setHandles(brush)
-	utils.checkArg("brush", brush, "brush", "editState:replaceHandles")
-
-	self:clearHandles()
-	self:addHandles(brush)
 end
 
 function editState:clearHandles()
-	self.handles = utils.clear(self.handles)
+	utils.clear(self.handles)
 end
 
 function editState:clearState()

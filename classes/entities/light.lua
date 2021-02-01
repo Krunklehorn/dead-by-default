@@ -2,7 +2,7 @@ local ffi = require "ffi"
 
 ffi.cdef[[
 	typedef struct _Light {
-		vec3 pos;
+		Entity;
 		vec2 vel;
 		vec3 color;
 		float intensity;
@@ -66,6 +66,12 @@ function Light:draw()
 		utils.drawCircle(self.pos.xy, self.range, "magenta", 0.25)
 		utils.drawCircle(self.pos.xy, self.radius, "magenta", 0.5)
 	end
+end
+
+function Light:pick(point)
+	utils.checkArg("point", point, "vec2", "Light:pick")
+
+	return (point - self.pos).length - self.range
 end
 
 setmetatable(Light, Light)

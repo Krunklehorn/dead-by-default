@@ -260,6 +260,12 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 			end
 
 			copy = true
+		elseif query == "entity" then
+			if not Entity.isEntity(value) then
+				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an entity: %q", key, class, value)
+			end
+
+			copy = true
 		elseif query == "handle" then
 			if not ring.isHandle(value) then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a handle: %q", key, class, value)
@@ -282,7 +288,7 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 			if not _class.isInstance(value) then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an instance: %q", key, class, value)
 			end
-		elseif query == "index/reference" then
+		elseif query == "index/instance" then
 			if type(value) ~= "number" and not _class.isInstance(value) then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an index or instance: %q", key, class, value)
 			end

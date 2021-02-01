@@ -241,7 +241,7 @@ function world.removeTrigger(this)
 end
 
 function world.removeAgent(this)
-	utils.checkArg("this", this, "index/reference", "world.removeAgent")
+	utils.checkArg("this", this, "index/instance", "world.removeAgent")
 
 	if type(this) == "number" then
 		return table.remove(world.agents, this)
@@ -258,13 +258,13 @@ function world.removeAgent(this)
 end
 
 function world.removeEntity(this)
-	utils.checkArg("this", this, "index/reference", "world.removeEntity")
+	utils.checkArg("this", this, "index/instance", "world.removeEntity")
 
 	if type(this) == "number" then
 		return table.remove(world.entities, this)
 	else
-		if not this:instanceOf(Entity) then
-			stache.formatError("world.removeEntity() called with a 'this' argument that isn't of type 'Entity': %q", this) end
+		if not Entity.isEntity(this) then
+			utils.formatError("world.removeEntity() called with a 'this' argument that isn't of type 'Entity': %q", this) end
 
 		for e, that in ipairs(world.entities) do
 			if this == that then

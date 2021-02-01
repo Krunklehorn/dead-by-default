@@ -39,6 +39,90 @@ function utils.formatError(msg, ...)
 	error(msg:format(unpack(strings)), 1)
 end
 
+function utils.checkArg(key, arg, query, func, nillable, default)
+	if arg == nil and nillable == true then
+		return default
+	else
+		if query == "number" or query == "string" or query == "boolean" or query == "table" or query == "function" or query == "cdata" then
+			if type(arg) ~= query then
+				utils.formatError("%s() called with a '%s' argument that isn't a %s: %q", func, key, query, arg)
+			end
+		elseif query == "indexable" then
+			if type(arg) ~= "table" and type(arg) ~= "cdata" then
+				utils.formatError("%s() called with a '%s' argument that isn't indexable: %q", func, key, arg)
+			end
+		elseif query == "vec2" then
+			if not vec2.isVec2(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a vec2: %q", func, key, arg)
+			end
+		elseif query == "vec3" then
+			if not vec3.isVec3(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a vec3: %q", func, key, arg)
+			end
+		elseif query == "vector" then
+			if not utils.isVector(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a vector: %q", func, key, arg)
+			end
+		elseif query == "number/vector" then
+			if type(arg) ~= "number" and not vec2.isVec2(arg) and not vec3.isVec3(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a scalar or vector: %q", func, key, arg)
+			end
+		elseif query == "collider" then
+			if not Collider.isCollider(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a collider: %q", func, key, arg)
+			end
+		elseif query == "brush" then
+			if not Brush.isBrush(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a brush: %q", func, key, arg)
+			end
+		elseif query == "trigger" then
+			if not Trigger.isTrigger(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a trigger: %q", func, key, arg)
+			end
+		elseif query == "entity" then
+			if not Entity.isEntity(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't an entity: %q", func, key, arg)
+			end
+		elseif query == "handle" then
+			if not ring.isHandle(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a handle: %q", func, key, arg)
+			end
+		elseif query == "asset" then
+			if type(arg) ~= "string" and type(arg) ~= "table" and type(arg) ~= "userdata" then
+				utils.formatError("%s() called with a '%s' argument that isn't a string, table or userdata: %q", func, key, arg)
+			end
+		elseif query == "ctype" then
+			query = type(arg) == "string" and ffi.typeof(arg) or arg
+			if tostring(query):sub(1, 5) ~= "ctype" then
+				utils.formatError("%s() called with a '%s' argument that isn't a string or ctype: %q", func, key, arg)
+			end
+			arg = query
+		elseif query == "class" then
+			if not class.isClass(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a class: %q", func, key, arg)
+			end
+		elseif query == "instance" then
+			if not class.isInstance(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't an instance: %q", func, key, arg)
+			end
+		elseif query == "index/instance" then
+			if type(arg) ~= "number" and not class.isInstance(arg) and not Brush.isBrush(arg) and not Entity.isEntity(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't an index or instance: %q", func, key, arg)
+			end
+		elseif class.isClass(query) then
+			query = class.isClass(query) and query or query.class
+
+			if not arg:instanceOf(query) then
+				utils.formatError("%s() called with a '%s' argument that isn't an instance of class '%s': %q", func, key, query.name, arg)
+			end
+		else
+			utils.formatError("checkArg() called with a 'query' argument that hasn't been setup for type-checking yet: %q", query)
+		end
+	end
+
+	return arg
+end
+
 local function addr32(p) return tonumber(ffi.cast(intptr_t, ffi.cast(voidptr_t, p))) end
 local function addr64(p)
 	local np = ffi.cast(intptr_t, ffi.cast(voidptr_t, p))
@@ -288,8 +372,8 @@ function utils.copy(obj) return stack_copy(obj) end
 -- stack_copy WEAK: 0.038278
 
 function utils.readOnly(name, key, ...)
-	utils.checkArg("name", name, "string", "readOnly")
-	utils.checkArg("key", key, "string", "readOnly")
+	utils.checkArg("name", name, "string", "utils.readOnly")
+	utils.checkArg("key", key, "string", "utils.readOnly")
 
 	for q, query in ipairs({...}) do
 		utils.checkArg(string.format("vararg[%s]", q), query, "string", "readOnly")
@@ -333,7 +417,7 @@ function utils.send(shader, uniform, ...)
 end
 
 function utils.glslRotator(angle)
-	utils.checkArg("angle", angle, "number", "glslRotator")
+	utils.checkArg("angle", angle, "number", "utils.glslRotator")
 
 	local c = math.cos(angle)
 	local s = math.sin(angle)
@@ -342,10 +426,10 @@ function utils.glslRotator(angle)
 end
 
 function utils.drawCircle(pos, radius, color, alpha)
-	utils.checkArg("pos", pos, "vector", "drawCircle")
-	utils.checkArg("radius", radius, "number", "drawCircle", true)
-	utils.checkArg("color", color, "asset", "drawCircle", true)
-	utils.checkArg("alpha", alpha, "number", "drawCircle", true)
+	utils.checkArg("pos", pos, "vector", "utils.drawCircle")
+	utils.checkArg("radius", radius, "number", "utils.drawCircle", true)
+	utils.checkArg("color", color, "asset", "utils.drawCircle", true)
+	utils.checkArg("alpha", alpha, "number", "utils.drawCircle", true)
 
 	radius = radius or 1
 	color = color or "white"
@@ -363,13 +447,13 @@ function utils.drawCircle(pos, radius, color, alpha)
 end
 
 function utils.drawBox(pos, angle, hwidth, hlength, radius, color, alpha)
-	utils.checkArg("pos", pos, "vector", "drawBox")
-	utils.checkArg("angle", angle, "number", "drawBox")
-	utils.checkArg("hwidth", hwidth, "number", "drawBox")
-	utils.checkArg("hlength", hlength, "number", "drawBox")
-	utils.checkArg("radius", radius, "number", "drawBox", true)
-	utils.checkArg("color", color, "asset", "drawBox", true)
-	utils.checkArg("alpha", alpha, "number", "drawBox", true)
+	utils.checkArg("pos", pos, "vector", "utils.drawBox")
+	utils.checkArg("angle", angle, "number", "utils.drawBox")
+	utils.checkArg("hwidth", hwidth, "number", "utils.drawBox")
+	utils.checkArg("hlength", hlength, "number", "utils.drawBox")
+	utils.checkArg("radius", radius, "number", "utils.drawBox", true)
+	utils.checkArg("color", color, "asset", "utils.drawBox", true)
+	utils.checkArg("alpha", alpha, "number", "utils.drawBox", true)
 
 	radius = radius or 0
 	color = color or "white"
@@ -395,10 +479,10 @@ function utils.drawBox(pos, angle, hwidth, hlength, radius, color, alpha)
 end
 
 function utils.drawLine(p1, p2, color, alpha)
-	utils.checkArg("p1", p1, "vector", "drawLine")
-	utils.checkArg("p2", p2, "vector", "drawLine")
-	utils.checkArg("color", color, "asset", "drawLine", true)
-	utils.checkArg("alpha", alpha, "number", "drawLine", true)
+	utils.checkArg("p1", p1, "vector", "utils.drawLine")
+	utils.checkArg("p2", p2, "vector", "utils.drawLine")
+	utils.checkArg("color", color, "asset", "utils.drawLine", true)
+	utils.checkArg("alpha", alpha, "number", "utils.drawLine", true)
 
 	color = color or "white"
 	alpha = alpha or 1
@@ -410,10 +494,10 @@ function utils.drawLine(p1, p2, color, alpha)
 end
 
 function utils.drawNormal(orig, norm, color, alpha)
-	utils.checkArg("orig", orig, "vector", "drawNormal")
-	utils.checkArg("norm", norm, "vector", "drawNormal")
-	utils.checkArg("color", color, "asset", "drawNormal", true)
-	utils.checkArg("alpha", alpha, "number", "drawNormal", true)
+	utils.checkArg("orig", orig, "vector", "utils.drawNormal")
+	utils.checkArg("norm", norm, "vector", "utils.drawNormal")
+	utils.checkArg("color", color, "asset", "utils.drawNormal", true)
+	utils.checkArg("alpha", alpha, "number", "utils.drawNormal", true)
 
 	color = color or "white"
 	alpha = alpha or 1
@@ -426,10 +510,10 @@ function utils.drawNormal(orig, norm, color, alpha)
 end
 
 function utils.drawTangent(orig, tan, color, alpha)
-	utils.checkArg("orig", orig, "vector", "drawTangent")
-	utils.checkArg("tan", tan, "vector", "drawTangent")
-	utils.checkArg("color", color, "asset", "drawTangent", true)
-	utils.checkArg("alpha", alpha, "number", "drawTangent", true)
+	utils.checkArg("orig", orig, "vector", "utils.drawTangent")
+	utils.checkArg("tan", tan, "vector", "utils.drawTangent")
+	utils.checkArg("color", color, "asset", "utils.drawTangent", true)
+	utils.checkArg("alpha", alpha, "number", "utils.drawTangent", true)
 
 	color = color or "white"
 	alpha = alpha or 1
@@ -442,8 +526,8 @@ function utils.drawTangent(orig, tan, color, alpha)
 end
 
 function utils.drawBounds(bounds, color, alpha)
-	utils.checkArg("color", color, "asset", "stache.printf", true)
-	utils.checkArg("alpha", alpha, "number", "stache.printf", true)
+	utils.checkArg("color", color, "asset", "utils.drawBounds", true)
+	utils.checkArg("alpha", alpha, "number", "utils.drawBounds", true)
 
 	color = color or "white"
 	alpha = alpha or 1
@@ -466,101 +550,27 @@ function utils.drawEach(table, ...)
 			table[t]:draw(...) end end
 end
 
+function utils.AABBContains(p1, p2, point)
+	utils.checkArg("p1", p1, "vec2", "utils.AABBContains")
+	utils.checkArg("p2", p2, "vec2", "utils.AABBContains")
+	utils.checkArg("point", point, "vector", "utils.AABBContains")
+
+	return point.x >= p1.x and point.x <= p2.x and
+		   point.y >= p1.y and point.y <= p2.y
+end
+
 function utils.isVector(obj)
 	return vec2.isVec2(obj) or vec3.isVec3(obj) end
 
--- if not ______ then error("error text") end
--- n = assert(io.read("*number"), "invalid input")
-
-function utils.checkArg(key, arg, query, func, nillable, default)
-	if arg == nil and nillable == true then
-		return default
-	else
-		if query == "number" or query == "string" or query == "boolean" or query == "table" or query == "function" or query == "cdata" then
-			if type(arg) ~= query then
-				utils.formatError("%s() called with a '%s' argument that isn't a %s: %q", func, key, query, arg)
-			end
-		elseif query == "indexable" then
-			if type(arg) ~= "table" and type(arg) ~= "cdata" then
-				utils.formatError("%s() called with a '%s' argument that isn't indexable: %q", func, key, arg)
-			end
-		elseif query == "vec2" then
-			if not vec2.isVec2(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a vec2: %q", func, key, arg)
-			end
-		elseif query == "vec3" then
-			if not vec3.isVec3(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a vec3: %q", func, key, arg)
-			end
-		elseif query == "vector" then
-			if not utils.isVector(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a vector: %q", func, key, arg)
-			end
-		elseif query == "number/vector" then
-			if type(arg) ~= "number" and not vec2.isVec2(arg) and not vec3.isVec3(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a scalar or vector: %q", func, key, arg)
-			end
-		elseif query == "collider" then
-			if not Collider.isCollider(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a collider: %q", func, key, arg)
-			end
-		elseif query == "brush" then
-			if not Brush.isBrush(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a brush: %q", func, key, arg)
-			end
-		elseif query == "trigger" then
-			if not Trigger.isTrigger(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a trigger: %q", func, key, arg)
-			end
-		elseif query == "handle" then
-			if not ring.isHandle(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a handle: %q", func, key, arg)
-			end
-		elseif query == "asset" then
-			if type(arg) ~= "string" and type(arg) ~= "table" and type(arg) ~= "userdata" then
-				utils.formatError("%s() called with a '%s' argument that isn't a string, table or userdata: %q", func, key, arg)
-			end
-		elseif query == "ctype" then
-			query = type(arg) == "string" and ffi.typeof(arg) or arg
-			if tostring(query):sub(1, 5) ~= "ctype" then
-				utils.formatError("%s() called with a '%s' argument that isn't a string or ctype: %q", func, key, arg)
-			end
-			arg = query
-		elseif query == "class" then
-			if not class.isClass(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a class: %q", func, key, arg)
-			end
-		elseif query == "instance" then
-			if not class.isInstance(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't an instance: %q", func, key, arg)
-			end
-		elseif query == "index/reference" then
-			if type(arg) ~= "number" and not class.isInstance(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't an index or instance: %q", func, key, arg)
-			end
-		elseif class.isClass(query) then
-			query = class.isClass(query) and query or query.class
-
-			if not arg:instanceOf(query) then
-				utils.formatError("%s() called with a '%s' argument that isn't an instance of class '%s': %q", func, key, query.name, arg)
-			end
-		else
-			utils.formatError("checkArg() called with a 'query' argument that hasn't been setup for type-checking yet: %q", query)
-		end
-	end
-
-	return arg
-end
-
 function utils.floatEquality(a, b)
-	utils.checkArg("a", a, "number", "floatEquality")
-	utils.checkArg("b", b, "number", "floatEquality")
+	utils.checkArg("a", a, "number", "utils.floatEquality")
+	utils.checkArg("b", b, "number", "utils.floatEquality")
 
 	return math.abs(a - b) <= FLOAT_THRESHOLD
 end
 
 function utils.nearZero(x)
-	utils.checkArg("x", x, "number", "nearZero")
+	utils.checkArg("x", x, "number", "utils.nearZero")
 
 	return math.abs(x) <= FLOAT_THRESHOLD
 end
@@ -574,10 +584,10 @@ function utils.snap(value, interval) return math.floor(value / interval + 0.5) *
 function utils.isNaN(x) return x ~= x end
 
 function utils.approach(value, target, rate, callback)
-	utils.checkArg("value", value, "number", "approach")
-	utils.checkArg("target", target, "number", "approach")
-	utils.checkArg("rate", rate, "number", "approach")
-	utils.checkArg("callback", callback, "function", "approach", true)
+	utils.checkArg("value", value, "number", "utils.approach")
+	utils.checkArg("target", target, "number", "utils.approach")
+	utils.checkArg("rate", rate, "number", "utils.approach")
+	utils.checkArg("callback", callback, "function", "utils.approach", true)
 
 	if value > target then
 		value = value - rate

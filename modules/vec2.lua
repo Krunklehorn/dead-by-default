@@ -75,6 +75,9 @@ function vec2:__newindex(key, value)
 
 		self.x = x
 		self.y = y
+	elseif key == "xy" then
+		self.x = value.x
+		self.y = value.y
 	elseif self == vec2 then rawset(vec2, key, value)
 	else formatError("Attempted to write new index '%s' to instance of 'vec2': %q", key, value) end
 end
