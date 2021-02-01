@@ -40,7 +40,10 @@ function Brush.batchSDF(brushes, entities)
 		lg.setShader(sdfShader)
 			lg.clear()
 			lg.setBlendMode("replace")
-			utils.send(sdfShader, "line_width", LINE_WIDTH)
+			utils.send(sdfShader, "LUMINANCE", LUMINANCE)
+			utils.send(sdfShader, "DEBUG_CLIPPING", DEBUG_DRAW and DEBUG_CLIPPING)
+			utils.send(sdfShader, "LINE_WIDTH", LINE_WIDTH)
+			utils.send(sdfShader, "realtime", stopwatch.realtime)
 
 			local camera = humpstate.current().camera
 			local scale = camera:getNormalizedScale()
@@ -85,10 +88,9 @@ function Brush.batchSDF(brushes, entities)
 
 						if entity:instanceOf(Light) and entity.pos.z == brush.height then
 							local pos = camera:toScreen(entity.pos.xy)
-							local color = Light.applyLuminance(entity.color, entity.intensity)
 
 							utils.send(sdfShader, Light.uniform_lights_pos_range_radius[nLights], { pos.x, pos.y, entity.range * scale, entity.radius * scale })
-							utils.send(sdfShader, Light.uniform_lights_color[nLights], { color.x, color.y, color.z, 1 }) -- Alpha unused, handled by shader
+							utils.send(sdfShader, Light.uniform_lights_color[nLights], { entity.color.x, entity.color.y, entity.color.z, entity.intensity })
 							nLights = nLights + 1
 						end
 					end
@@ -118,12 +120,11 @@ function Brush.batchSDF(brushes, entities)
 				end
 			end
 		lg.setCanvas()
-		lg.setShader(noiseShader)
-			lg.origin()
-			lg.setBlendMode("alpha")
-			utils.send(noiseShader, "realtime", stopwatch.realtime)
-			lg.draw(SDF_CANVAS)
 		lg.setShader()
+
+		lg.origin()
+		lg.setBlendMode("alpha")
+		lg.draw(SDF_CANVAS)
 	lg.pop()
 end
 

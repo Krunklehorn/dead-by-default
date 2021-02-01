@@ -61,7 +61,7 @@ function CircleCollider:draw(color, scale)
 	lg.push("all")
 		lg.setShader(shader)
 			stache.setColor(color)
-			shader:send("line_width", LINE_WIDTH)
+			shader:send("LINE_WIDTH", LINE_WIDTH)
 
 			shader:send("pos", camera:toScreen(self.pos).table)
 			shader:send("radius", self.radius * scale * camera:getNormalizedScale())

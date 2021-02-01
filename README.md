@@ -115,6 +115,7 @@ Shader Improvements
 - arcs, polygons and bezier support
 - more boolean operations
 - color and texture groups
+- primitive clustering in a tree structure for early cone-marching exits
 
 Core Improvements
 - area portals to mimic the basement stairs (or to make non-euclidean tiles lol)

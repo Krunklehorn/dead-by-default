@@ -110,6 +110,8 @@ function love.keypressed(key)
 		love.resize(lg.getDimensions()) -- Force the resize callback
 	elseif key == "kp0" and stopwatch.ticks > NET_ROLLBACK_FRAMES then
 		DEBUG_ROLLBACK = not DEBUG_ROLLBACK
+	elseif key == "kpenter" then
+		LUMINANCE = not LUMINANCE
 	elseif key == "kp*" then
 		stopwatch.timescale = stopwatch.timescale * 2
 	elseif key == "kp/" then

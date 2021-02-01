@@ -75,29 +75,34 @@ function playState:draw(rt)
 	self.camera:detach()
 
 	if DEBUG_DRAW then
-		input.draw()
+		if DEBUG_KEYS then
+			input.draw() end
 
 		local scale = UI_SCALE_FLOORED
 		stache.setFont(stache.fonts.consola)
 
-		lg.translate(0, 5 * scale)
-		stache.setColor("white", 0.8)
-		stache.printf{40 * scale, Agent.enumToString(input.players.active.agentHndl.action), 5}
-
-		if DEBUG_SLEEP and stopwatch.string then
-			lg.push("all")
-				lg.translate(lg.getWidth() - 510 * scale, 0)
-				stache.setColor("white", 0.8)
-				stache.printf{20 * scale, stopwatch.string, 5}
-			lg.pop()
+		if DEBUG_STATE then
+			lg.translate(0, 5 * scale)
+			stache.setColor("white", 0.8)
+			stache.printf{40 * scale, Agent.enumToString(input.players.active.agentHndl.action), 5}
 		end
 
-		if stopwatch.lagging() then
-			lg.push("all")
-				lg.translate(lg.getWidth() - 35 * scale, 0)
-				stache.setColor("yellow", 0.8)
-				stache.printf{50 * scale, "!", 5}
-			lg.pop()
+		if DEBUG_SLEEP then
+			if stopwatch.string then
+				lg.push("all")
+					lg.translate(lg.getWidth() - 510 * scale, 0)
+					stache.setColor("white", 0.8)
+					stache.printf{20 * scale, stopwatch.string, 5}
+				lg.pop()
+			end
+
+			if stopwatch.lagging() then
+				lg.push("all")
+					lg.translate(lg.getWidth() - 35 * scale, 0)
+					stache.setColor("yellow", 0.8)
+					stache.printf{50 * scale, "!", 5}
+				lg.pop()
+			end
 		end
 
 		if DEBUG_ROLLBACK then

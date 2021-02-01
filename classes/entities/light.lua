@@ -35,7 +35,7 @@ function Light:__call(params)
 
 	pos = pos or vec3(0, 0, 128)
 	vel = vel or vec2()
-	color = vec3.max(color, 0.00001) or vec3(1)
+	color = color or vec3(1)
 	intensity = intensity or 1
 	range = range or UNIT_TILE
 	radius = radius or 6
@@ -66,13 +66,6 @@ function Light:draw()
 		utils.drawCircle(self.pos.xy, self.range, "magenta", 0.25)
 		utils.drawCircle(self.pos.xy, self.radius, "magenta", 0.5)
 	end
-end
-
-function Light.applyLuminance(color, alpha)
-	utils.checkArg("color", color, "vec3", "Light.alphaToLuminance")
-	utils.checkArg("alpha", alpha, "number", "Light.alphaToLuminance")
-
-	return color * alpha / (color.x + 1.5 * color.y + 0.5 * color.z);
 end
 
 setmetatable(Light, Light)

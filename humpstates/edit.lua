@@ -48,6 +48,10 @@ function editState:enter(from)
 	end
 end
 
+function editState:leave(to)
+	self:deselect()
+end
+
 function editState:update(tl)
 	self.camera:update(tl)
 end
@@ -64,7 +68,8 @@ function editState:draw(rt)
 	if playState.camera then
 		playState.camera:draw() end
 
-	utils.drawDebug()
+	if DEBUG_DRAW then
+		utils.drawDebug() end
 
 	self.grid:pop()
 
@@ -173,7 +178,7 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 
 		local delta = mwpos - self.pmwpos
 
-		if self.toolState.type == "circle" then self.toolState.brush.radius = math.max(delta.length, 10)
+		if self.toolState.type == "circle" then self.toolState.brush.radius = math.max(delta.length, 25)
 		elseif self.toolState.type == "box" then self.toolState.brush.star = delta
 		elseif self.toolState.type == "line" then self.toolState.brush.p2 = self.pmwpos + delta end
 	elseif lm.isDown(3) then

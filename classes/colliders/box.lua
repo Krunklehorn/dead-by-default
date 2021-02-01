@@ -99,7 +99,7 @@ function BoxCollider:draw(color, scale)
 	lg.push("all")
 		lg.setShader(shader)
 			stache.setColor(color)
-			shader:send("line_width", LINE_WIDTH)
+			shader:send("LINE_WIDTH", LINE_WIDTH)
 
 			shader:send("pos", camera:toScreen(self.pos).table)
 			shader:send("invrot", utils.glslRotator(camera.angle - self.angle))

@@ -34,7 +34,7 @@ function world.init()
 	local function randVec(hl)
 		return vec2(lmth.random(-hl, hl), lmth.random(-hl, hl)) end
 
-	local l = 4
+	local l = 1
 	io.write("SDF_MAX_BRUSHES: "..SDF_MAX_BRUSHES.."\n")
 	io.write("HEIGHT LEVELS: "..l.."\n")
 	io.write("TOTAL BRUSHES: "..l * SDF_MAX_BRUSHES.."\n")
@@ -80,17 +80,9 @@ function world.init()
 	end})
 
 	world.addAgent{ pos = vec3(0, 0, 128), radius = 35, color = "cyan" }
-	world.addAgent{ pos = vec3(-200, 0, 128), radius = 45, angle = math.rad(85), color = "red" }
 
-	--world.addAgent{ pos = vec3(-200, 0, 128), radius = 40, color = "cyan" }
-	--world.addAgent{ pos = vec3(200, 0, 128), radius = 60, color = "red" }
-
-	world.addEntity(Light, { pos = vec3(-125, -150, 160), color = vec3(1, 1, 0), intensity = 0.2, range = 800 })
-	world.addEntity(Light, { pos = vec3(-125, -150, 160), color = vec3(1, 0.5, 0), intensity = 0.8, range = 70 })
-	world.addEntity(Light, { pos = vec3(-4000, -4000, 160), color = vec3(1, 1, 2 / 3), intensity = 0.2, range = 12000, radius = 400 })
-	world.addEntity(Light, { pos = vec3(0, 0, 176), color = vec3(0, 1, 0), intensity = 0.1, range = 4000 })
-
-	world.addEntity(Vault, { pos = vec3(300, -50, 128), angle = math.rad(90) })
+	world.addEntity(Light, { pos = vec3(200, 0, 144), color = vec3(1, 0, 1), intensity = 1 })
+	world.addEntity(Light, { pos = vec3(-200, 0, 144), color = vec3(0, 1, 1), intensity = 1 })
 end
 
 function world.update(tl)
