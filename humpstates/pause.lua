@@ -30,5 +30,8 @@ end
 
 function pauseState:keypressed(key)
 	if key == "p" then
-		humpstate.pop() end
+		humpstate.pop()
+	elseif key == "escape" then
+		le.quit()
+	end
 end

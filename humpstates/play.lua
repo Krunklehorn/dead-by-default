@@ -120,6 +120,8 @@ function playState:keypressed(key)
 		humpstate.switch(editState)
 	elseif key == "p" then
 		humpstate.push(pauseState)
+	elseif key == "escape" then
+		le.quit()
 	end
 end
 

@@ -36,5 +36,8 @@ end
 
 function titleState:keypressed(key)
 	if key == "return" or key == "space" then
-		utils.switch(playState) end
+		utils.switch(playState)
+	elseif key == "escape" then
+		le.quit()
+	end
 end

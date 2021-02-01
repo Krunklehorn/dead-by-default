@@ -100,7 +100,7 @@ function editState:mousepressed(x, y, button)
 			for b = 1, #world.brushes do
 				local brush = world.brushes[b]
 
-				if brush:pick(mwpos) and (not height or brush.height > height) then
+				if brush:pick(mwpos) <= 0 and (not height or brush.height > height) then
 					height = brush.height
 					selection = brush
 				end
@@ -132,7 +132,7 @@ function editState:mousepressed(x, y, button)
 			for b = 1, #world.brushes do
 				local brush = world.brushes[b]
 
-				if brush:pick(mwpos) and (not height or brush.height > height) then
+				if brush:pick(mwpos) <= 0 and (not height or brush.height > height) then
 					height = brush.height end
 			end
 
@@ -201,6 +201,9 @@ function editState:keypressed(key)
 		utils.switch(titleState)
 	elseif key == "return" then
 		humpstate.switch(playState)
+	elseif key == "escape" then
+		if self.selection then self:deselect()
+		else le.quit() end
 	end
 end
 
@@ -266,6 +269,8 @@ function editState:addHandles(brush)
 		self.handles[#self.handles + 1] = PointHandle(brush, "p1")
 		self.handles[#self.handles + 1] = PointHandle(brush, "p2")
 	end
+
+	self.handles[#self.handles + 1] = RadiusHandle(brush, "radius")
 end
 
 function editState:setHandles(brush)

@@ -100,21 +100,21 @@ function LineCollider:pick(point)
 
 	if scalar <= 0 then
 		if offset.eqZero then
-			return true end
+			return 0 end
 
 		clmpdist = offset.length
 	elseif scalar >= 1 then
 		offset = point - self.p2
 
 		if offset.eqZero then
-			return true end
+			return 0 end
 
 		clmpdist = offset.length
 	else
 		clmpdist = (point - (self.p1 + self.delta * scalar)).length
 	end
 
-	return clmpdist - self.radius <= 0
+	return clmpdist - self.radius
 end
 
 function LineCollider:overlap(other)

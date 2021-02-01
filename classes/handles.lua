@@ -83,6 +83,7 @@ function PointHandle:pick(mwpos, scale, state)
 		return self
 	else
 		self.state = "idle"
+
 		return nil
 	end
 end
@@ -158,6 +159,85 @@ function VectorHandle:pick(mwpos, scale, state)
 		return self
 	else
 		self.state = "idle"
+
+		return nil
+	end
+end
+
+RadiusHandle = Handle:extend("RadiusHandle")
+
+function RadiusHandle:init(target)
+	utils.checkArg("target", target, "indexable", "RadiusHandle:init")
+
+	self.state = "idle"
+	self.target = target
+end
+
+function RadiusHandle:draw(scale)
+	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
+
+	local target = self.target
+	local radius = target.radius
+
+	lg.push("all")
+		stache.setColor(Handle.colors[self.state], 1)
+		lg.setLineWidth(LINE_WIDTH / scale)
+
+		if self.target:instanceOf(CircleBrush) then
+			local pos = target.pos
+
+			lg.circle("line", pos.x, pos.y, radius)
+		elseif self.target:instanceOf(BoxBrush) then
+			local pos = target.pos
+			local hwidth = target.hwidth + radius
+			local hlength = target.hlength + radius
+
+			lg.translate(pos.x, pos.y)
+			lg.rotate(target.angle)
+			lg.rectangle("line", -hwidth, -hlength, hwidth * 2, hlength * 2, radius, radius)
+		elseif self.target:instanceOf(LineBrush) then
+			local p1, p2 = target.p1, target.p2
+			local length = target.delta.length
+			local angle = target.direction.angle
+
+			lg.push("all")
+				lg.translate(p1.x, p1.y)
+				lg.rotate(angle)
+
+				lg.line(0, radius, length, radius)
+				lg.arc("line", "open", 0, 0, radius, 3 * math.pi / 2, math.pi / 2)
+			lg.pop()
+
+			lg.push("all")
+				lg.translate(p2.x, p2.y)
+				lg.rotate(angle)
+
+				lg.line(0, -radius, -length, -radius)
+				lg.arc("line", "open", 0, 0, radius, -math.pi / 2, math.pi / 2)
+			lg.pop()
+		end
+	lg.pop()
+end
+
+function RadiusHandle:drag(mwpos, interval)
+	if lk.isDown("lctrl") then
+		mwpos = mwpos:snapped(interval) end
+
+	self.target.radius = math.max(self.target:pick(mwpos) + self.target.radius, 1)
+end
+
+function RadiusHandle:pick(mwpos, scale, state)
+	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
+
+	if math.abs(self.target:pick(mwpos)) <= LINE_WIDTH * 16 / scale then
+		if state then
+			self.state = state
+		end
+
+		return self
+	else
+		self.state = "idle"
+
 		return nil
 	end
 end

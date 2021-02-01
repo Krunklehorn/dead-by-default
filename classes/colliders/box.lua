@@ -123,7 +123,11 @@ end
 function BoxCollider:pick(point)
 	utils.checkArg("point", point, "vec2", "BoxCollider:pick")
 
-	return ((point - self.pos):rotated(-self.angle).abs - self.hdims).leZero
+	local delta = (point - self.pos):rotated(-self.angle).abs - self.hdims
+	local clip = vec2.max(delta, 0)
+	local sdist = clip.length + math.min(math.max(delta.x, delta.y), 0) - self.radius
+
+	return sdist
 end
 
 function BoxCollider:overlap(other)

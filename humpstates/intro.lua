@@ -22,5 +22,8 @@ end
 
 function introState:keypressed(key)
 	if key == "return" or key == "space" then
-		self.splash:skip() end
+		self.splash:skip()
+	elseif key == "escape" then
+		le.quit()
+	end
 end

@@ -116,8 +116,6 @@ function love.keypressed(key)
 		stopwatch.timescale = stopwatch.timescale * 2
 	elseif key == "kp/" then
 		stopwatch.timescale = stopwatch.timescale / 2
-	elseif key == "escape" then
-		le.quit()
 	end
 end
 

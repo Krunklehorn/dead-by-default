@@ -83,7 +83,7 @@ end
 function CircleCollider:pick(point)
 	utils.checkArg("point", point, "vec2", "CircleCollider:pick")
 
-	return (point - self.pos).length - self.radius <= 0
+	return (point - self.pos).length - self.radius
 end
 
 function CircleCollider:overlap(other)
