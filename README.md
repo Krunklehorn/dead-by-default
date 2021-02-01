@@ -99,16 +99,20 @@ When the "game" itself is ready to be played...
 
 Editor Improvements
 - moving tools to a toolbar menu
-- property editing through a widget system
+- property editing through a menu widget
 - better brush placement options (by corners or by edges w/wo radius etc.)
+- selection system :heavy_check_mark:
+- radius handling :heavy_check_mark:
 - selection groups and lock toggles
+- selection and visibility filters
 - grid-snapped crosshair :heavy_check_mark:
-- eyedropper tool
-- color picker
+- multi-handle transform
+- property painter tool
+- color picker widget
 
 Color Improvements
 - moving to an HSV / HSL based system
-- map-specific color correction
+- map wide color correction
 
 Shader Improvements
 - single uniform list for more objects per blend layer
