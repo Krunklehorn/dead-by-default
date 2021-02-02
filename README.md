@@ -87,9 +87,12 @@ When the "game" itself is ready to be played...
 | 2 | Circle |
 | 3 | Box |
 | 4 | Line |
+| 5 | Light |
+| 6 | Vault |
 | Del | Delete |
 | J | Save |
 | K | Load |
+| Esc | Deselect |
 | LCtrl | Snap |
 | M | Fullscreen |
 | Enter | Play Mode |
@@ -112,7 +115,7 @@ Editor Improvements
 
 Color Improvements
 - moving to an HSV / HSL based system
-- map wide color correction
+- map-wide color correction
 
 Shader Improvements
 - single uniform list for more objects per blend layer

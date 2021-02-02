@@ -148,7 +148,7 @@ function Agent:update(tl)
 						self.angle = self.angle + math.pi * 2 * utils.sign(ang - self.angle) end
 
 					local fast = utils.floatEquality(self.vel.length, 400) and math.abs(math.deg(ang - self.angle)) <= 45
-					local dist = fast and 250 or 125
+					local dist = fast and Vault.fdist or Vault.mdist
 
 					if scalar > 0 and scalar < 1 and projdist < dist and (not entity.oneway and true or sign == 1) then
 						-- TODO: postMessage("ui_prompt_vault", fast)

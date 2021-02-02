@@ -134,7 +134,7 @@ function editState:mousepressed(x, y, button)
 			elseif self.activeTool == "vault" then obj = world.addEntity(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
 
 			self.toolState = { type = self.activeTool, obj = obj  }
-			self:setSelect(brush)
+			self:setSelect(obj)
 			self.pmwpos = mwpos
 		else
 			-- TODO: widget menu goes here!
@@ -195,6 +195,9 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 	if self.pickHandle then
 		self.pickHandle:drag(mwpos, self.grid:minorInterval(true))
 	elseif self.toolState then
+		if toolType ~= "select" and lk.isDown("lctrl") then
+			mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
+
 		local toolType = self.toolState.type
 		local delta = mwpos - self.pmwpos
 
@@ -230,7 +233,7 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 		elseif toolType == "box" then self.toolState.obj.star = delta
 		elseif toolType == "line" then self.toolState.obj.p2 = self.pmwpos + delta
 		elseif toolType == "light" then self.toolState.obj.range = math.max(delta.length, 25)
-		elseif toolType == "vault" then self.toolState.obj.forward = delta end
+		elseif toolType == "vault" then self.toolState.obj.bow = delta end
 	elseif lm.isDown(1) then
 		self.toolState = { type = "select" }
 	elseif lm.isDown(3) then
@@ -432,7 +435,8 @@ function editState:addHandles(obj)
 		if obj:instanceOf(Light) then
 			self.handles[#self.handles + 1] = RadiusHandle(obj, "range")
 		elseif obj:instanceOf(Vault) then
-			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "forward")
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "bow")
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "star")
 		end
 	end
 end

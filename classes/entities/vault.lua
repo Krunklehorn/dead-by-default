@@ -11,7 +11,9 @@ ffi.cdef[[
 ]]
 
 Vault = {
-	new = ffi.typeof("Vault")
+	new = ffi.typeof("Vault"),
+	fdist = 250,
+	mdist = 125
 }
 
 function Vault:__call(params)
@@ -41,13 +43,16 @@ end
 function Vault:__index(key)
 	if key == "forward" then return vec2(math.sin(self.angle), -math.cos(self.angle))
 	elseif key == "right" then return vec2(math.cos(self.angle), math.sin(self.angle))
+	elseif key == "bow" then return self.forward * 100
+	elseif key == "star" then return self.right * self.hwidth
 	elseif key == "copy" then return Vault.new(self)
 	else return rawget(Vault, key) end
 end
 
 function Vault:__newindex(key, value)
-	if key == "forward" then self.angle = math.atan2(value.x, -value.y)
+	if key == "forward" or key == "bow" then self.angle = math.atan2(value.x, -value.y)
 	elseif key == "right" then self.angle = math.atan2(value.y, value.x)
+	elseif key == "star" then self.hwidth = math.max(value.length, 75)
 	elseif self == Vault then rawset(Vault, key, value)
 	else utils.formatError("Attempted to write new index '%s' to instance of 'Vault': %q", key, value) end
 end
@@ -61,17 +66,27 @@ function Vault:instanceOf(class) return class == Vault end
 function Vault.isVault(obj) return ffi.istype("Vault", obj) end
 
 function Vault:draw()
-	if DEBUG_DRAW and DEBUG_ENTITIES then
+	if DEBUG_DRAW and DEBUG_ENTITIES and DEBUG_VAULTS then
 		utils.drawBox(self.pos, self.angle, self.hwidth, 10, 0, "magenta", 0.5)
 		utils.drawLine(self.pos, self.pos + self.forward * 100, "magenta", 0.5)
 
-		utils.drawLine(self.pos - self.right * self.hwidth, self.pos - self.right * self.hwidth - self.forward * 125, "magenta", 0.5)
-		utils.drawLine(self.pos + self.right * self.hwidth, self.pos + self.right * self.hwidth - self.forward * 125, "magenta", 0.5)
+		utils.drawLine(self.pos - self.right * self.hwidth, self.pos - self.right * self.hwidth - self.forward * Vault.mdist, "magenta", 0.5)
+		utils.drawLine(self.pos + self.right * self.hwidth, self.pos + self.right * self.hwidth - self.forward * Vault.mdist, "magenta", 0.5)
 		if not self.oneway then
-			utils.drawLine(self.pos - self.right * self.hwidth, self.pos - self.right * self.hwidth + self.forward * 125, "magenta", 0.5)
-			utils.drawLine(self.pos + self.right * self.hwidth, self.pos + self.right * self.hwidth + self.forward * 125, "magenta", 0.5)
+			utils.drawLine(self.pos - self.right * self.hwidth, self.pos - self.right * self.hwidth + self.forward * Vault.mdist, "magenta", 0.5)
+			utils.drawLine(self.pos + self.right * self.hwidth, self.pos + self.right * self.hwidth + self.forward * Vault.mdist, "magenta", 0.5)
 		end
 	end
+end
+
+function Vault:pick(point)
+	utils.checkArg("point", point, "vec2", "Vault:pick")
+
+	local delta = (point - self.pos):rotated(-self.angle).abs - vec2(self.hwidth, 10)
+	local clip = vec2.max(delta, 0)
+	local sdist = clip.length + math.min(math.max(delta.x, delta.y), 0)
+
+	return sdist
 end
 
 setmetatable(Vault, Vault)
