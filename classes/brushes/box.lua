@@ -35,7 +35,7 @@ function BoxBrush:__call(params)
 	pos = pos or vec2()
 	vel = vel or vec2()
 	radius = radius or 0
-	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(-forward.x, -forward.y)) or 0
+	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(forward.x, -forward.y)) or 0
 	hwidth = hwidth or hlength
 	hlength = hlength or hwidth
 	height = height or 0

@@ -260,6 +260,12 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 			end
 
 			copy = true
+		elseif query == "agent" then
+			if not Agent.isAgent(value) then
+				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an agent: %q", key, class, value)
+			end
+
+			copy = true
 		elseif query == "entity" then
 			if not Entity.isEntity(value) then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an entity: %q", key, class, value)

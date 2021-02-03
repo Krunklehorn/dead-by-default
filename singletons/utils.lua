@@ -79,6 +79,10 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 			if not Trigger.isTrigger(arg) then
 				utils.formatError("%s() called with a '%s' argument that isn't a trigger: %q", func, key, arg)
 			end
+		elseif query == "agent" then
+			if not Agent.isAgent(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't an agent: %q", func, key, arg)
+			end
 		elseif query == "entity" then
 			if not Entity.isEntity(arg) then
 				utils.formatError("%s() called with a '%s' argument that isn't an entity: %q", func, key, arg)
@@ -414,15 +418,6 @@ end
 function utils.send(shader, uniform, ...)
 	if shader:hasUniform(uniform) then
 		shader:send(uniform, ...) end
-end
-
-function utils.glslRotator(angle)
-	utils.checkArg("angle", angle, "number", "utils.glslRotator")
-
-	local c = math.cos(angle)
-	local s = math.sin(angle)
-
-	return { c, -s, s, c }
 end
 
 function utils.drawCircle(pos, radius, color, alpha)

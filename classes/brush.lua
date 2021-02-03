@@ -10,8 +10,7 @@ ffi.cdef[[
 Brush = {
 	uniform_circles_pos_radius = {},
 	uniform_boxes_pos_hdims = {},
-	uniform_boxes_invrot = {},
-	uniform_boxes_radius = {},
+	uniform_boxes_cosa_sina_radius = {},
 	uniform_lines_pos_delta = {},
 	uniform_lines_length2_radius = {}
 }
@@ -19,8 +18,7 @@ Brush = {
 for i = 0, SDF_MAX_BRUSHES - 1 do
 	Brush.uniform_circles_pos_radius[i] = string.format("circles[%s].pos_radius", i)
 	Brush.uniform_boxes_pos_hdims[i] = string.format("boxes[%s].pos_hdims", i)
-	Brush.uniform_boxes_invrot[i] = string.format("boxes[%s].invrot", i)
-	Brush.uniform_boxes_radius[i] = string.format("boxes[%s].radius", i)
+	Brush.uniform_boxes_cosa_sina_radius[i] = string.format("boxes[%s].cosa_sina_radius", i)
 	Brush.uniform_lines_pos_delta[i] = string.format("lines[%s].pos_delta", i)
 	Brush.uniform_lines_length2_radius[i] = string.format("lines[%s].length2_radius", i)
 end
@@ -68,10 +66,10 @@ function Brush.batchSDF(brushes, entities)
 				elseif brush:instanceOf(BoxBrush) then
 					local pos = camera:toScreen(brush.pos)
 					local hdims = brush.hdims:scaled(scale)
+					local angle = -(brush.angle - camera.angle)
 
 					utils.send(sdfShader, Brush.uniform_boxes_pos_hdims[nBoxes], { pos.x, pos.y, hdims.x, hdims.y })
-					utils.send(sdfShader, Brush.uniform_boxes_invrot[nBoxes], utils.glslRotator(camera.angle - brush.angle))
-					utils.send(sdfShader, Brush.uniform_boxes_radius[nBoxes], brush.radius * scale)
+					utils.send(sdfShader, Brush.uniform_boxes_cosa_sina_radius[nBoxes], { math.cos(angle), math.sin(angle), brush.radius * scale })
 					nBoxes = nBoxes + 1
 				elseif brush:instanceOf(LineBrush) then
 					local pos = camera:toScreen(brush.p1)

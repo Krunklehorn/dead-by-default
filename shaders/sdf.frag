@@ -1,7 +1,7 @@
 #pragma language glsl3
 
 #define MATH_HUGE 100000
-#define SDF_MAX_BRUSHES 140
+#define SDF_MAX_BRUSHES 197
 #define SDF_MAX_LIGHTS 12
 #define edgebias (LINE_WIDTH + 0.5)
 
@@ -19,8 +19,7 @@ struct Circle {
 
 struct Box {
 	vec4 pos_hdims;
-	mat2 invrot;
-	float radius;
+	vec3 cosa_sina_radius;
 };
 
 struct Line {
@@ -46,6 +45,9 @@ uniform int nBoxes;
 uniform int nLines;
 uniform int nLights;
 
+vec2 CCW(vec2 v, float c, float s) {
+	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
+
 float sceneDist(vec2 xy) {
 	float sdist = MATH_HUGE;
 
@@ -58,11 +60,11 @@ float sceneDist(vec2 xy) {
 
 	for (int i = 0; i < nBoxes; i++) {
 		Box box = boxes[i];
-		vec2 offset = box.invrot * (box.pos_hdims.xy - xy);
+		vec2 offset = CCW((box.pos_hdims.xy - xy), box.cosa_sina_radius.x, box.cosa_sina_radius.y);
 		vec2 delta = abs(offset) - box.pos_hdims.zw;
 		vec2 clip = max(delta, 0);
 
-		sdist = min(sdist, length(clip) + min(max(delta.x, delta.y), 0) - box.radius);
+		sdist = min(sdist, length(clip) + min(max(delta.x, delta.y), 0) - box.cosa_sina_radius.z);
 	}
 
 	for (int i = 0; i < nLines; i++) {

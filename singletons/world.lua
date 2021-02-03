@@ -206,72 +206,44 @@ function world.addEntity(ctor, params)
 	return entity
 end
 
-function world.removeBrush(this)
-	utils.checkArg("this", this, "brush", "world.removeBrush")
+function world.removeBrush(brush)
+	utils.checkArg("brush", brush, "brush", "world.removeBrush")
 
-	if type(this) == "number" then
-		return table.remove(world.brushes, this)
-	else
-		if not Brush.isBrush(this) then
-			stache.formatError("world.removeBrush() called with a 'this' argument that isn't a brush: %q", this) end
+	for b = 1, #world.brushes do
+		if brush == world.brushes[b] then
+			return table.remove(world.brushes, b) end end
 
-		for b = 1, #world.brushes do
-			if this == world.brushes[b] then
-				return table.remove(world.brushes, b) end end
-
-		stache.formatError("world.removeBrush() called with a reference that should not exist: %q", this)
-	end
+	utils.formatError("world.removeBrush() called with a reference that should not exist: %q", brush)
 end
 
-function world.removeTrigger(this)
-	utils.checkArg("this", this, "trigger", "world.removeTrigger")
+function world.removeTrigger(trigger)
+	utils.checkArg("trigger", trigger, "trigger", "world.removeTrigger")
 
-	if type(this) == "number" then
-		return table.remove(world.triggers, this)
-	else
-		if not this:instanceOf(Trigger) then
-			stache.formatError("world.removeTrigger() called with a 'this' argument that isn't of type 'Trigger': %q", this) end
+	for t = 1, #world.triggers do
+		if trigger == world.triggers[t] then
+			return table.remove(world.triggers, t) end end
 
-		for t, that in ipairs(world.triggers) do
-			if this == that then
-				return table.remove(world.triggers, t) end end
-
-		stache.formatError("world.removeTrigger() called with a reference that should not exist: %q", this)
-	end
+	utils.formatError("world.removeTrigger() called with a reference that should not exist: %q", trigger)
 end
 
-function world.removeAgent(this)
-	utils.checkArg("this", this, "index/instance", "world.removeAgent")
+function world.removeAgent(agent)
+	utils.checkArg("agent", agent, "agent", "world.removeAgent")
 
-	if type(this) == "number" then
-		return table.remove(world.agents, this)
-	else
-		if not this:instanceOf(Agent) then
-			stache.formatError("world.removeAgent() called with a 'this' argument that isn't of type 'Agent': %q", this) end
+	for a = 1, #world.agents do
+		if agent == world.agents[a] then
+			return table.remove(world.agents, a) end end
 
-		for a, that in ipairs(world.agents) do
-			if this == that then
-				return table.remove(world.agents, a) end end
-
-		stache.formatError("world.removeAgent() called with a reference that should not exist: %q", this)
-	end
+	utils.formatError("world.removeAgent() called with a reference that should not exist: %q", agent)
 end
 
-function world.removeEntity(this)
-	utils.checkArg("this", this, "index/instance", "world.removeEntity")
+function world.removeEntity(entity)
+	utils.checkArg("entity", entity, "entity", "world.removeEntity")
 
-	if type(this) == "number" then
-		return table.remove(world.entities, this)
-	else
-		if not Entity.isEntity(this) then
-			utils.formatError("world.removeEntity() called with a 'this' argument that isn't of type 'Entity': %q", this) end
+	for e = 1, #world.entities do
+		if entity == world.entities[e] then
+			return table.remove(world.entities, e) end end
 
-		for e, that in ipairs(world.entities) do
-			if this == that then
-				return table.remove(world.entities, e) end end
-
-		stache.formatError("world.removeEntity() called with a reference that should not exist: %q", this)
-	end
+	utils.formatError("world.removeEntity() called with a reference that should not exist: %q", entity)
 end
 
 return setmetatable(world, world)

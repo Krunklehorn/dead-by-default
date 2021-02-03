@@ -33,7 +33,7 @@ function Vault:__call(params)
 
 	pos = pos or vec3(0, 0, 128)
 	vel = vel or vec2()
-	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(-forward.x, -forward.y)) or 0
+	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(forward.x, -forward.y)) or 0
 	hwidth = hwidth or 75
 	oneway = oneway or false
 
@@ -50,8 +50,9 @@ function Vault:__index(key)
 end
 
 function Vault:__newindex(key, value)
-	if key == "forward" or key == "bow" then self.angle = math.atan2(value.x, -value.y)
+	if key == "forward" then self.angle = math.atan2(value.x, -value.y)
 	elseif key == "right" then self.angle = math.atan2(value.y, value.x)
+	elseif key == "bow" then self.angle = math.atan2(value.x, -value.y)
 	elseif key == "star" then self.hwidth = math.max(value.length, 75)
 	elseif self == Vault then rawset(Vault, key, value)
 	else utils.formatError("Attempted to write new index '%s' to instance of 'Vault': %q", key, value) end

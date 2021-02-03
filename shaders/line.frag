@@ -9,11 +9,6 @@ uniform float radius;
 
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	vec2 offset = pos - xy;
-
-	// early exit from circumscribed circle
-	//if (length(pos + (delta / 2) - xy) - LINE_WIDTH - 0.5 > length(delta) / 2 + radius)
-		//discard;
-
 	float scalar = dot(delta, -offset) / length2;
 	vec2 clamped = pos + delta * clamp(scalar, 0, 1);
 	float sdist = length(clamped - xy) - radius;

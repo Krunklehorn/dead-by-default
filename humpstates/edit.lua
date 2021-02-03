@@ -99,18 +99,18 @@ function editState:mousepressed(x, y, button)
 
 		self.pmwpos = mwpos
 	elseif isButtonSecondary(button) and not self.toolState then
-		local delete = false
+		local delete
 
 		for h = 1, #self.handles do
 			local handle = self.handles[h]
 
 			if handle:instanceOf(PointHandle) and
 			   handle:pick(mwpos, scale, "delete") then
-				   delete = true end
+				   delete = handle.target end
 		end
 
 		if delete then
-			self:delete()
+			self:delete(delete)
 		elseif self.activeTool ~= "none" then
 			local height = nil
 			local obj = nil
@@ -330,7 +330,7 @@ function editState:deselect(obj)
 			for o = 1, #self.selection do
 				if obj == self.selection[o] then
 					table.remove(self.selection, o)
-					o = o - 1
+					break
 				end
 			end
 
@@ -399,18 +399,26 @@ function editState:flipSelect(obj)
 	end
 end
 
-function editState:delete()
-	for o = 1, #self.selection do
-		local obj = self.selection[o]
+function editState:delete(obj)
+	utils.checkArg("obj", obj, "indexable", "editState:delete", true)
 
+	if obj then
 		if Brush.isBrush(obj) then
 			world.removeBrush(obj)
+			self:deselect(obj)
 		elseif Entity.isEntity(obj) then
 			world.removeEntity(obj)
+			self:deselect(obj)
+		else
+			for o = 1, #obj do
+				self:delete(obj[o]) end
 		end
-	end
+	else
+		for o = 1, #self.selection do
+			self:delete(self.selection[o]) end
 
-	self:deselect()
+		self:deselect()
+	end
 end
 
 function editState:addHandles(obj)

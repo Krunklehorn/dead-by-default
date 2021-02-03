@@ -12,7 +12,7 @@ lw = love.window
 
 FLOAT_THRESHOLD = 0.00001
 
-SDF_MAX_BRUSHES = 140
+SDF_MAX_BRUSHES = 197
 SDF_MAX_LIGHTS = 12
 SDF_UNITPLANE = lg.newMesh({{  1, -1,  1,  0 }, -- x, y, u, v
 							{ -1, -1,  0,  0 },

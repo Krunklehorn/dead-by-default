@@ -3,18 +3,16 @@
 uniform float LINE_WIDTH = 1;
 
 uniform vec2 pos;
-uniform vec2 delta;
-uniform mat2 invrot;
+uniform float cosa;
+uniform float sina;
 uniform vec2 hdims;
 uniform float radius;
 
+vec2 CCW(vec2 v, float c, float s) {
+	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
+
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
-	vec2 offset = invrot * (pos - xy);
-
-	// early exit from circumscribed circle
-	//if (length(offset) - LINE_WIDTH - 0.5 > length(hdims) + radius)
-		//discard;
-
+	vec2 offset = CCW((pos - xy), cosa, sina);
 	vec2 delta = abs(offset) - hdims;
 	vec2 clip = max(delta, 0);
 	float sdist = length(clip) + min(max(delta.x, delta.y), 0) - radius;

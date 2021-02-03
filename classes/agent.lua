@@ -78,7 +78,7 @@ function Agent:__call(params)
 
 	pos = pos or vec3()
 	vel = vel or vec3()
-	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(-forward.x, -forward.y)) or 0
+	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(forward.x, -forward.y)) or 0
 	color = color or "cyan"
 	radius = radius or 45
 
@@ -102,6 +102,8 @@ function Agent:__tostring()
 end
 
 function Agent:instanceOf(class) return class == Agent end
+function Agent.isAgent(obj) return ffi.istype("Agent", obj) end
+
 function Agent.enumToString(obj)
 	if ffi.istype("AgentState", obj) then return Agent.states[tonumber(obj) + 1]
 	elseif ffi.istype("AgentAction", obj) then return Agent.actions[tonumber(obj) + 1]

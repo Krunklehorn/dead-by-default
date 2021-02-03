@@ -38,7 +38,7 @@ function BoxCollider:__call(params)
 	pos = pos or vec2.new()
 	vel = vel or vec2.new()
 	radius = radius or 0
-	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(-forward.x, -forward.y)) or 0
+	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(forward.x, -forward.y)) or 0
 	hwidth = hwidth or hlength
 	hlength = hlength or hwidth
 
@@ -70,11 +70,11 @@ function BoxCollider:__newindex(key, value)
 	if key == "forward" then self.angle = math.atan2(value.x, -value.y)
 	elseif key == "right" then self.angle = math.atan2(value.y, value.x)
 	elseif key == "bow" then
-		self.hlength = value.length
 		self.angle = math.atan2(value.x, -value.y)
+		self.hlength = value.length
 	elseif key == "star" then
-		self.hwidth = value.length
 		self.angle = math.atan2(value.y, value.x)
+		self.hwidth = value.length
 	elseif self == BoxCollider then rawset(BoxCollider, key, value)
 	else utils.formatError("Attempted to write new index '%s' to instance of 'BoxCollider': %q", key, value) end
 end
@@ -101,8 +101,11 @@ function BoxCollider:draw(color, scale)
 			stache.setColor(color)
 			shader:send("LINE_WIDTH", LINE_WIDTH)
 
+			local angle = -(self.angle - camera.angle)
+
 			shader:send("pos", camera:toScreen(self.pos).table)
-			shader:send("invrot", utils.glslRotator(camera.angle - self.angle))
+			shader:send("cosa", math.cos(angle))
+			shader:send("sina", math.sin(angle))
 			shader:send("hdims", self.hdims:scaled(camera:getNormalizedScale()).table)
 			shader:send("radius", self.radius * scale * camera:getNormalizedScale())
 
