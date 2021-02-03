@@ -12,15 +12,8 @@ ffi.cdef[[
 ]]
 
 Light = {
-	new = ffi.typeof("Light"),
-	uniform_lights_pos_range_radius = {},
-	uniform_lights_color = {}
+	new = ffi.typeof("Light")
 }
-
-for i = 0, SDF_MAX_LIGHTS - 1 do
-	Light.uniform_lights_pos_range_radius[i] = string.format("lights[%s].pos_range_radius", i)
-	Light.uniform_lights_color[i] = string.format("lights[%s].color", i)
-end
 
 function Light:__call(params)
 	if Light.isLight(self) then

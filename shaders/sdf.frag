@@ -13,6 +13,7 @@ uniform bool DEBUG_CLIPPING = false;
 uniform float LINE_WIDTH = 1;
 uniform float realtime = 0;
 
+/*
 struct Circle {
 	vec3 pos_radius;
 };
@@ -31,14 +32,19 @@ struct Light {
 	vec4 pos_range_radius;
 	vec4 color;
 };
+*/
 
 uniform Image canvas;
 uniform float height;
 
-uniform Circle circles[SDF_MAX_BRUSHES];
-uniform Box boxes[SDF_MAX_BRUSHES];
-uniform Line lines[SDF_MAX_BRUSHES];
-uniform Light lights[SDF_MAX_LIGHTS];
+//uniform Circle circles[SDF_MAX_BRUSHES];
+//uniform Box boxes[SDF_MAX_BRUSHES];
+//uniform Line lines[SDF_MAX_BRUSHES];
+//uniform Light lights[SDF_MAX_LIGHTS];
+uniform vec4 circles[SDF_MAX_BRUSHES];
+uniform vec4 boxes[SDF_MAX_BRUSHES * 2];
+uniform vec4 lines[SDF_MAX_BRUSHES * 2];
+uniform vec4 lights[SDF_MAX_LIGHTS * 2];
 
 uniform int nCircles;
 uniform int nBoxes;
@@ -48,32 +54,59 @@ uniform int nLights;
 vec2 CCW(vec2 v, float c, float s) {
 	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
 
+float CircleDist(vec2 xy, vec2 pos, float radius) {
+	return length(pos - xy) - radius;
+}
+
+float BoxDist(vec2 xy, vec2 pos, vec2 hdims, float cosa, float sina, float radius) {
+	vec2 offset = CCW((pos - xy), cosa, sina);
+	vec2 delta = abs(offset) - hdims;
+	vec2 clip = max(delta, 0);
+
+	return length(clip) + min(max(delta.x, delta.y), 0) - radius;
+}
+
+float LineDist(vec2 xy, vec2 pos, vec2 delta, float length2, float radius) {
+	float scalar = dot(delta, -(pos - xy)) / length2;
+	vec2 clamped = pos + delta * clamp(scalar, 0, 1);
+
+	return length(clamped - xy) - radius;
+}
+
 float sceneDist(vec2 xy) {
 	float sdist = MATH_HUGE;
 
 	for (int i = 0; i < nCircles; i++) {
-		Circle circle = circles[i];
-		vec2 offset = circle.pos_radius.xy - xy;
-
-		sdist = min(sdist, length(offset) - circle.pos_radius.z);
+		sdist = min(sdist, CircleDist(xy, circles[i].xy,
+										  circles[i].z));
+		/*sdist = min(sdist, CircleDist(xy, circles[i].pos_radius.xy,
+										  circles[i].pos_radius.z));*/
 	}
 
-	for (int i = 0; i < nBoxes; i++) {
-		Box box = boxes[i];
-		vec2 offset = CCW((box.pos_hdims.xy - xy), box.cosa_sina_radius.x, box.cosa_sina_radius.y);
-		vec2 delta = abs(offset) - box.pos_hdims.zw;
-		vec2 clip = max(delta, 0);
-
-		sdist = min(sdist, length(clip) + min(max(delta.x, delta.y), 0) - box.cosa_sina_radius.z);
+	//for (int i = 0; i < nBoxes; i++) {
+	for (int i = 0; i < nBoxes; i += 2) {
+		sdist = min(sdist, BoxDist(xy, boxes[i].xy,
+									   boxes[i].zw,
+									   boxes[i + 1].x,
+									   boxes[i + 1].y,
+									   boxes[i + 1].z));
+		/*sdist = min(sdist, BoxDist(xy, boxes[i].pos_hdims.xy,
+										 boxes[i].pos_hdims.zw,
+										 boxes[i].cosa_sina_radius.x,
+										 boxes[i].cosa_sina_radius.y,
+										 boxes[i].cosa_sina_radius.z));*/
 	}
 
-	for (int i = 0; i < nLines; i++) {
-		Line line = lines[i];
-		vec2 offset = line.pos_delta.xy - xy;
-		float scalar = dot(line.pos_delta.zw, -offset) / line.length2_radius.x;
-		vec2 clamped = line.pos_delta.xy + line.pos_delta.zw * clamp(scalar, 0, 1);
-
-		sdist = min(sdist, length(clamped - xy) - line.length2_radius.y);
+	//for (int i = 0; i < nLines; i++) {
+	for (int i = 0; i < nLines; i += 2) {
+		sdist = min(sdist, LineDist(xy, lines[i].xy,
+										lines[i].zw,
+										lines[i + 1].x,
+										lines[i + 1].y));
+		/*sdist = min(sdist, LineDist(xy, lines[i].pos_delta.xy,
+										lines[i].pos_delta.zw,
+										lines[i].length2_radius.x,
+										lines[i].length2_radius.y));*/
 	}
 
 	return sdist;
@@ -84,14 +117,13 @@ float sceneDist(vec2 xy) {
 // https://www.shadertoy.com/view/4dfXDn
 /////////////////////////////////////////////////////////////////////
 
-float shadow(vec2 xy, vec2 pos, float radius)
+float shadow(vec2 xy, vec2 delta, float ld, vec2 pos, float radius)
 {
-	// from light to pixel
-	vec2 dir = normalize(pos - xy);
-	float dl = length(pos - xy);
+	// from pixel to light
+	vec2 dir = normalize(delta);
 
 	// fraction of light visible, starts at one radius (second half added in the end);
-	float lf = radius * dl;
+	float lf = radius * ld;
 
 	// distance traveled
 	float dt = 0.01;
@@ -108,40 +140,21 @@ float shadow(vec2 xy, vec2 pos, float radius)
 
 		// width of cone-overlap at light
 		// 0 in center, so 50% overlap: add one radius outside of loop to get total coverage
-		// should be '(sd / dt) * dl', but '*dl' outside of loop
+		// should be '(sd / dt) * ld', but '*ld' outside of loop
 		lf = min(lf, sd / dt);
 
 		// move ahead
 		dt += max(1, abs(sd));
-		if (dt > dl) break;
+		if (dt > ld) break;
 	}
 
-	// multiply by dl to get the real projected overlap (moved out of loop)
+	// multiply by ld to get the real projected overlap (moved out of loop)
 	// add one radius, before between -radius and + radius
 	// normalize to 1 ( / 2*radius)
-	lf = clamp((lf * dl + radius) / (2 * radius), 0, 1);
+	lf = clamp((lf * ld + radius) / (2 * radius), 0, 1);
 	lf = smoothstep(0, 1, lf);
 
 	return lf;
-}
-
-vec3 addLight(vec2 xy, vec2 pos, vec3 color, float range, float radius)
-{
-	// from light to pixel
-	vec2 delta = xy - pos;
-	float ld = length(delta);
-
-	// out of range
-	if (ld > range) return vec3(0);
-
-	// falloff
-	float fall = (range - ld) / range;
-
-	// center pixel fix
-	if (ld < 1) return color;
-
-	// shadow
-	return color * shadow(xy, pos, radius) * (fall * fall);
 }
 
 vec4 addLight(vec2 xy, vec2 pos, vec4 color, float range, float radius)
@@ -160,7 +173,7 @@ vec4 addLight(vec2 xy, vec2 pos, vec4 color, float range, float radius)
 	if (ld < 1) return color;
 
 	// shadow
-	return color * shadow(xy, pos, radius) * (fall * fall);
+	return color * shadow(xy, -delta, ld, pos, radius) * (fall * fall);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -243,12 +256,16 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	}
 	else {
 		if (nLights > 0) {
-			for (int i = 0; i < nLights; i++) {
-				Light light = lights[i];
-				lighting += addLight(xy, light.pos_range_radius.xy,
+			//for (int i = 0; i < nLights; i++) {
+			for (int i = 0; i < nLights; i += 2) {
+				lighting += addLight(xy, lights[i].xy,
+										 LUMINANCE ? lights[i + 1] : lights[i + 1] * lights[i + 1].a,
+										 lights[i].z,
+										 lights[i].w);
+				/*lighting += addLight(xy, light.pos_range_radius.xy,
 										 LUMINANCE ? light.color : light.color * light.color.a,
 										 light.pos_range_radius.z,
-										 light.pos_range_radius.w);
+										 light.pos_range_radius.w);*/
 			}
 		}
 

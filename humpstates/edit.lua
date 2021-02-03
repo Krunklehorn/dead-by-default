@@ -253,7 +253,9 @@ function editState:keypressed(key)
 	elseif key == "6" then self.activeTool = "vault"
 	elseif key == "delete" then self:delete()
 	elseif key == "j" then world.save()
-	elseif key == "k" then world.load()
+	elseif key == "k" then
+		world.load()
+		self:deselect()
 	elseif key == "backspace" then
 		utils.switch(titleState)
 	elseif key == "return" then

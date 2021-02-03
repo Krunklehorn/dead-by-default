@@ -42,16 +42,18 @@ function world.init()
 	--[[for h = 1, l do
 		for i = 1, SDF_MAX_BRUSHES do
 			local type = lmth.random(1, 3)
-			local height = 128 + h * (128 / l)
+			local height = 128 + h * 16
 
 			if type == 1 then
 				local p = randVec(UNIT_TILE)
-				world.addBrush(CircleBrush, { pos = p,
+				local d = p.normalized * (UNIT_TILE - p.length) * 0.5
+				world.addBrush(CircleBrush, { pos = p + d,
 											  radius = lmth.random(25, 100),
 											  height = height })
 			elseif type == 2 then
 				local p = randVec(UNIT_TILE)
-				world.addBrush(BoxBrush, { pos = p,
+				local d = p.normalized * (UNIT_TILE - p.length) * 0.5
+				world.addBrush(BoxBrush, { pos = p + d,
 										   radius = lmth.random(0, 20),
 										   hwidth = lmth.random(25, 100),
 										   hlength = lmth.random(25, 100),
@@ -60,8 +62,9 @@ function world.init()
 				local c = randVec(UNIT_TILE) - vec2(200)
 				local o1 = vec2(lmth.random(0, 400), lmth.random(0, 400))
 				local o2 = vec2(lmth.random(0, 400), lmth.random(0, 400))
-				world.addBrush(LineBrush, { p1 = c + o1,
-											p2 = c + o2,
+				local d = c.normalized * (UNIT_TILE - c.length) * 0.5
+				world.addBrush(LineBrush, { p1 = c + o1 + d,
+											p2 = c + o2 + d,
 											radius = 20,
 											height = height })
 			end
