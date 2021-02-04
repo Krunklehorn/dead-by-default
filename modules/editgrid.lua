@@ -53,11 +53,14 @@ local function unpackCamera(t, nolerp) -- Modified to retrieve camera parameters
 	local p = t.getPosition and t:getPosition(nolerp or false)
 	local a = t.getAngle and t:getAngle(nolerp or false)
 	local s = t.getScale and t:getScale(nolerp or false)
+	local o = t.getWindowCenter and t:getWindowCenter(nolerp or false)
 	return
 	   p and p.x or t.x or 0,
 	   p and p.y or t.y or 0,
 	   (s or t.scale or t.zoom or 1) * UI_SCALE, -- Added support for automatic graphics scaling
 	   a or t.angle or t.rot or 0,
+	   o and o.x or WINDOW_CENTER_VEC2.x, -- Added support for offset by origin
+	   o and o.y or WINDOW_CENTER_VEC2.y,
 	   sx, sy, sw, sh
 end
 
@@ -101,22 +104,23 @@ end
 
 local function visible(camera)
 	camera = checkType(camera or EMPTY, "table", "camera")
-	local camx, camy, zoom, angle, sx, sy, sw, sh = unpackCamera(camera)
+	local camx, camy, zoom, angle, ox, oy, sx, sy, sw, sh = unpackCamera(camera) -- Modified to use camera origin instead of screen center
 	local w, h = sw / zoom, sh / zoom
 	if not utils.nearZero(angle) then -- Added float equality hook...
 	   local sin, cos = math.abs(math.sin(angle)), math.abs(math.cos(angle))
 	   w, h = cos * w + sin * h, sin * w + cos * h
 	end
-	return camx - w * 0.5, camy - h * 0.5, w, h
+	return camx - ox / zoom, camy - oy / zoom, w, h
+	--return camx - w / 2, camy - h / 2, w, h
 end
 
 local function toWorld(camera, screenx, screeny)
 	checkType(screenx, "number", "screenx")
 	checkType(screeny, "number", "screeny")
 	camera = checkType(camera or EMPTY, "table", "camera")
-	local camx, camy, zoom, angle, sx, sy, sw, sh = unpackCamera(camera)
+	local camx, camy, zoom, angle, ox, oy, sx, sy = unpackCamera(camera) -- Modified to use camera origin instead of screen center
 	local sin, cos = math.sin(angle), math.cos(angle)
-	local x, y = (screenx - sw/2 - sx) / zoom, (screeny - sh/2 - sy) / zoom
+	local x, y = (screenx - ox - sx) / zoom, (screeny - oy - sy) / zoom
 	x, y = cos * x - sin * y, sin * x + cos * y
 	return x + camx, y + camy
 end
@@ -125,11 +129,11 @@ local function toScreen(camera, worldx, worldy)
 	checkType(worldx, "number", "worldx")
 	checkType(worldy, "number", "worldy")
 	camera = checkType(camera or EMPTY, "table", "camera")
-	local camx, camy, zoom, angle, sx, sy, sw, sh = unpackCamera(camera)
+	local camx, camy, zoom, angle, ox, oy, sx, sy = unpackCamera(camera) -- Modified to use camera origin instead of screen center
 	local sin, cos = math.sin(angle), math.cos(angle)
 	local x, y = worldx - camx, worldy - camy
 	x, y = cos * x + sin * y, -sin * x + cos * y
-	return zoom * x + sw/2 + sx, zoom * y + sh/2 + sy
+	return zoom * x + ox + sx, zoom * y + oy + sy
 end
 
 local function minorInterval(camera, visuals, nolerp) -- Modified to get interval based on destination
@@ -203,7 +207,7 @@ local function convertCoords(camera, visuals, src, dest, x, y)
 end
 
 local function getCorners(camera)
-	local sx, sy, sw, sh = select(5, unpackCamera(camera))
+	local sx, sy, sw, sh = select(7, unpackCamera(camera)) -- Modified after adding support for offset by origin
 	local x1, y1 = toWorld(camera, sx, sy) -- top left
 	local x2, y2 = toWorld(camera, sx + sw, sy) -- top right
 	local x3, y3 = toWorld(camera, sx + sw, sy + sh) -- bottom right
@@ -233,10 +237,10 @@ end
 
 local function push(camera, stack) -- Added optional parameter for specifying the stackType to push
 	camera = checkType(camera or EMPTY, "table", "camera")
-	local camx, camy, zoom, angle, sx, sy, sw, sh = unpackCamera(camera)
+	local camx, camy, zoom, angle, ox, oy, sx, sy = unpackCamera(camera) -- Modified to use camera origin instead of screen center
 	lg.push(stack)
 	lg.scale(zoom)
-	lg.translate((sw / 2 + sx) / zoom, (sh / 2 + sy) / zoom)
+	lg.translate((ox + sx) / zoom, (oy + sy) / zoom)
 	lg.rotate(-angle)
 	lg.translate(-camx, -camy)
 end
@@ -248,7 +252,7 @@ end
 local function draw(camera, visuals)
 	camera = checkType(camera or EMPTY, "table", "camera")
 	visuals = checkType(visuals or EMPTY, "table", "visuals")
-	local camx, camy, zoom, angle, sx, sy, sw, sh = unpackCamera(camera)
+	local camx, camy, zoom, angle, ox, oy, sx, sy, sw, sh = unpackCamera(camera)
 	local size, sds, ds, color, xColor, yColor, ff, tf, hideOrigin, style = unpackVisuals(visuals, zoom)
 	local x1, y1, x2, y2, x3, y3, x4, y4 = getCorners(camera)
 	local swapXYLabels = mod(angle + math.pi/4, math.pi) > math.pi/2

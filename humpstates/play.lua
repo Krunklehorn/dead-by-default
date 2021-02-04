@@ -8,7 +8,7 @@ function playState:init()
 	input.players.active.agentHndl = agentHndl
 	input.players.active.agentIndx = 1
 
-	self.camera = Camera{scale = 0.5, pblend = 0.85}
+	self.camera = Camera{scale = 0.5, origin = vec2(0.5, 0.75), pblend = 0.85}
 	self.camera:setPTarget(agentHndl, "pos", true)
 	self.camera:setATarget(agentHndl, "look", true)
 
@@ -28,15 +28,16 @@ function playState:enter(from)
 		self.camera.pos = editState.camera.pos
 		self.camera.angle = editState.camera.angle
 		self.camera.scale = editState.camera.scale
+		self.camera.origin = editState.camera.origin
 		self.camera:setPTarget(agentHndl, "pos")
 		self.camera:setATarget(agentHndl, "look")
+		self.camera.otarget = vec2(0.5, 0.75)
 		self.camera.starget = 0.5
 		self.camera.pblend = 1
 		self.camera.ablend = 1
 		self.camera.sblend = 1
-		flux.to(self.camera, 0.5, { pblend = 0.85 }):ease("quadout")
-		flux.to(self.camera, 0.5, { ablend = 0 }):ease("quadout")
-		flux.to(self.camera, 0.5, { sblend = 0 }):ease("quadout")
+		self.camera.oblend = 1
+		flux.to(self.camera, 0.5, { pblend = 0.85, ablend = 0, sblend = 0, oblend = 0.85 }):ease("quadout")
 	end
 end
 

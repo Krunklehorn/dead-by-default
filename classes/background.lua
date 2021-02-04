@@ -37,9 +37,8 @@ function Background:clone()
 end
 
 function Background:draw(camera)
-	local width, height = lg.getDimensions()
-	local center = vec2(width, height) / 2
-	local overdraw = Background.overdraw / camera.scale / UI_SCALE
+	local center = camera:getWindowCenter()
+	local overdraw = Background.overdraw / camera.scale / UI_SCALE * 2
 	local sdw = self.sprite:getWidth() * self.scale.x
 	local sdh = self.sprite:getHeight() * self.scale.y
 
@@ -50,9 +49,9 @@ function Background:draw(camera)
 	pos = pos * self.scroll
 	pos = pos - self.offset * self.scale
 
-	self.quad:setViewport(pos.x - (width / 2) * overdraw + sdw / 2,
-						  pos.y - (height / 2) * overdraw + sdh / 2,
-						  width * overdraw, height * overdraw,
+	self.quad:setViewport(pos.x - center.x * overdraw + sdw / 2,
+						  pos.y - center.y * overdraw + sdh / 2,
+						  WINDOW_DIMS_VEC2.x * overdraw, WINDOW_DIMS_VEC2.y * overdraw,
 						  sdw, sdh)
 
 	lg.push("all")

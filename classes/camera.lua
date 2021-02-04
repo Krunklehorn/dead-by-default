@@ -15,6 +15,7 @@ function Camera:__newindex(key, value)
 		self:checkBounds()
 	elseif key == "angle" then slf[key] = self:checkSet(key, value, "number")
 	elseif key == "scale" then slf[key] = self:checkSet(key, value, "number")
+	elseif key == "origin" then slf[key] = self:checkSet(key, value, "vec2")
 	elseif key == "ptarget" then
 		if value and not utils.isVector(value) and not ring.isHandle(value) and type(value) ~= "table" then
 			utils.formatError("Attempted to set 'ptarget' key of class 'Camera' to a value that isn't a vector, handle or table: %q", value) end
@@ -42,10 +43,19 @@ function Camera:__newindex(key, value)
 			slf.skey = nil end
 
 		slf[key] = value
+	elseif key == "otarget" then
+		if value and not utils.isVector(value) and not ring.isHandle(value) and type(value) ~= "table" then
+			utils.formatError("Attempted to set 'otarget' key of class 'Camera' to a value that isn't a vector, handle or table: %q", value) end
+
+		if utils.isVector(value) then
+			slf.okey = nil
+			slf[key] = value.xy
+		else slf[key] = value end
 	elseif key == "pkey" then slf[key] = (slf.ptarget and not vec2.isVec2(slf.ptarget)) and self:checkSet(key, value, "string", true) or nil
 	elseif key == "akey" then slf[key] = (slf.atarget and type(slf.atarget) ~= "number") and self:checkSet(key, value, "string", true) or nil
 	elseif key == "skey" then slf[key] = (slf.starget and type(slf.starget) ~= "number") and self:checkSet(key, value, "string", true) or nil
-	elseif key == "pblend" or key == "ablend" or key == "sblend" then slf[key] = utils.clamp01(self:checkSet(key, value, "number"))
+	elseif key == "okey" then slf[key] = (slf.otarget and not vec2.isVec2(slf.otarget)) and self:checkSet(key, value, "string", true) or nil
+	elseif key == "pblend" or key == "ablend" or key == "sblend" or key == "oblend" then slf[key] = utils.clamp01(self:checkSet(key, value, "number"))
 	elseif key == "smin" or key == "smax" then slf[key] = self:checkSet(key, value, "number")
 	elseif key == "bounds" then
 		self:checkSet(key, value, "table", true)
@@ -66,17 +76,19 @@ function Camera:init(params)
 	local pos = utils.checkArg("pos", params[1] or params.pos, "vec2", "Camera:init", true)
 	local angle = utils.checkArg("angle", params[2] or params.angle, "number", "Camera:init", true)
 	local scale = utils.checkArg("scale", params[3] or params.scale, "number", "Camera:init", true)
-	local ptarget = params[4] or params.ptarget
-	local atarget = params[5] or params.atarget
-	local starget = params[6] or params.starget
-	local pkey, akey, skey
+	local origin = utils.checkArg("origin", params[4] or params.origin, "vec2", "Camera:init", true)
+	local ptarget = params[5] or params.ptarget
+	local atarget = params[6] or params.atarget
+	local starget = params[7] or params.starget
+	local otarget = params[8] or params.otarget
+	local pkey, akey, skey, okey
 
 	if ptarget then
 		if not utils.isVector(ptarget) and not ring.isHandle(ptarget) and type(ptarget) ~= "table" then
 			utils.formatError("Camera:init() called with a 'ptarget' key that isn't a vector, handle or table: %q", ptarget) end
 
 		if not utils.isVector(ptarget) then
-			pkey = utils.checkArg("pkey", params[7] or params.pkey, "string", "Camera:init")
+			pkey = utils.checkArg("pkey", params[9] or params.pkey, "string", "Camera:init")
 
 			if not utils.isVector(ptarget[pkey]) then
 				utils.formatError("Camera:init() called with a 'pkey' argument that doesn't point to a vector: %q, %q", ptarget, pkey) end
@@ -88,7 +100,7 @@ function Camera:init(params)
 			utils.formatError("Camera:init() called with an 'atarget' key that isn't a number, handle or table: %q", atarget) end
 
 		if type(atarget) ~= "number" then
-			akey = utils.checkArg("akey", params[8] or params.akey, "string", "Camera:init")
+			akey = utils.checkArg("akey", params[10] or params.akey, "string", "Camera:init")
 
 			if type(atarget[akey]) ~= "number" then
 				utils.formatError("Camera:init() called with a 'akey' argument that doesn't point to a number: %q, %q", atarget, akey) end
@@ -100,19 +112,32 @@ function Camera:init(params)
 			utils.formatError("Camera:init() called with an 'starget' key that isn't a number, handle or table: %q", starget) end
 
 		if type(starget) ~= "number" then
-			skey = utils.checkArg("skey", params[9] or params.skey, "string", "Camera:init")
+			skey = utils.checkArg("skey", params[11] or params.skey, "string", "Camera:init")
 
 			if type(starget[skey]) ~= "number" then
 				utils.formatError("Camera:init() called with a 'skey' argument that doesn't point to a number: %q, %q", starget, skey) end
 		end
 	end
 
-	local pblend = utils.checkArg("pblend", params[10] or params.pblend, "number", "Camera:init", true)
-	local ablend = utils.checkArg("ablend", params[11] or params.ablend, "number", "Camera:init", true)
-	local sblend = utils.checkArg("sblend", params[12] or params.sblend, "number", "Camera:init", true)
-	local smin = utils.checkArg("smin", params[13] or params.smin, "number", "Camera:init", true)
-	local smax = utils.checkArg("smax", params[14] or params.smax, "number", "Camera:init", true)
-	local bounds = utils.checkArg("bounds", params[15] or params.bounds, "table", "Camera:init", true)
+	if otarget then
+		if not utils.isVector(otarget) and not ring.isHandle(otarget) and type(otarget) ~= "table" then
+			utils.formatError("Camera:init() called with a 'otarget' key that isn't a vector, handle or table: %q", otarget) end
+
+		if not utils.isVector(otarget) then
+			okey = utils.checkArg("okey", params[12] or params.okey, "string", "Camera:init")
+
+			if not utils.isVector(otarget[okey]) then
+				utils.formatError("Camera:init() called with a 'okey' argument that doesn't point to a vector: %q, %q", otarget, okey) end
+		end
+	end
+
+	local pblend = utils.checkArg("pblend", params[13] or params.pblend, "number", "Camera:init", true)
+	local ablend = utils.checkArg("ablend", params[14] or params.ablend, "number", "Camera:init", true)
+	local sblend = utils.checkArg("sblend", params[15] or params.sblend, "number", "Camera:init", true)
+	local oblend = utils.checkArg("oblend", params[16] or params.oblend, "number", "Camera:init", true)
+	local smin = utils.checkArg("smin", params[17] or params.smin, "number", "Camera:init", true)
+	local smax = utils.checkArg("smax", params[18] or params.smax, "number", "Camera:init", true)
+	local bounds = utils.checkArg("bounds", params[19] or params.bounds, "table", "Camera:init", true)
 
 	if bounds then
 		utils.checkArg("bounds.p1", bounds.p1, "vec2", "Camera:init")
@@ -123,18 +148,22 @@ function Camera:init(params)
 	end
 
 	self.private = {
-		pos = pos or (ptarget and ptarget[pkey].xy or vec2.new()),
+		pos = pos or (ptarget and ptarget[pkey].xy or vec2()),
 		angle = angle or (atarget and atarget[akey] or 0),
 		scale = scale or (starget and starget[skey] or 1),
+		origin = origin or vec2(0.5, 0.5),
 		ptarget = (utils.isVector(ptarget) and ptarget.xy or ptarget) or nil,
 		atarget = atarget or nil,
 		starget = starget or nil,
+		otarget = otarget or nil,
 		pkey = pkey or nil,
 		akey = akey or nil,
 		skey = skey or nil,
+		okey = okey or nil,
 		pblend = pblend or 0,
 		ablend = ablend or 0,
 		sblend = sblend or 0,
+		oblend = oblend or pblend or 0,
 		smin = smin or 0.01,
 		smax = smax or 10,
 		bounds = bounds or nil
@@ -158,12 +187,15 @@ function Camera:clone()
 			ptarget = vec2.isVec2(slf.ptarget) and slf.ptarget.copy or slf.ptarget,
 			atarget = slf.atarget,
 			starget = slf.starget,
+			otarget = slf.otarget,
 			pkey = slf.pkey,
 			akey = slf.akey,
 			skey = slf.skey,
+			okey = slf.okey,
 			pblend = slf.pblend,
 			ablend = slf.ablend,
 			sblend = slf.sblend,
+			oblend = slf.oblend,
 			smin = slf.smin,
 			smax = slf.smax,
 			bounds = utils.copy(slf.bounds)
@@ -197,21 +229,32 @@ function Camera:update(tl)
 		else self.scale = self.scale + delta * (1 - self.sblend ^ (tl * 60)) end
 	end
 
+	if self.otarget then
+		local target = vec2.isVec2(self.otarget) and self.otarget or self.otarget[self.okey]
+		local delta = target - self.origin
+
+		if utils.nearZero(delta.length) then self.origin = target
+		else self.origin = self.origin + delta * (1 - self.oblend ^ (tl * 60)) end
+	end
+
 	self:checkBounds()
 end
 
 function Camera:draw()
+	local w, h = lg.getDimensions()
+
 	lg.push("all")
 		lg.translate(self.pos.x, self.pos.y)
 		lg.rotate(self.angle)
+		lg.translate((-self:getWindowCenter()):split())
 		stache.setColor("red", 1)
-		lg.rectangle("line", -WINDOW_CENTER_VEC2.x, -WINDOW_CENTER_VEC2.y, lg.getDimensions())
+		lg.rectangle("line", 0, 0, w, h)
 	lg.pop()
 end
 
 function Camera:attach()
 	lg.push()
-	lg.translate(lg.getWidth() / 2, lg.getHeight() / 2)
+	lg.translate(self:getWindowCenter():split())
 	lg.rotate(-self.angle)
 	lg.scale(self:getNormalizedScale())
 	lg.translate(-self.pos.x, -self.pos.y)
@@ -267,10 +310,26 @@ function Camera:zoom(scale)
 		self.starget = scale end
 end
 
+function Camera:offset(dx, dy)
+	utils.checkArg("dx", dx, "number/vector", "Camera:offset")
+	utils.checkArg("dy", dy, "number", "Camera:offset", true)
+
+	local delta = utils.isVector(dx) and dx.xy or vec2(dx, dy)
+
+	if self.otarget then
+		if not vec2.isVec2(self.otarget) then
+			self.otarget = self.otarget[self.okey]
+			self.okey = nil
+		end
+	else self.otarget = self.origin end
+
+	self.otarget = self.otarget + delta
+end
+
 function Camera:checkBounds()
 	if self.bounds then
 		local bdims = self.bounds.p2 - self.bounds.p1
-		local cwdims = WINDOW_DIMS_VEC2 / self.scale
+		local cwdims = self:getWindowCenter() / self.scale
 
 		if bdims.x > cwdims.x then
 			self.pos.x = utils.clamp(self.pos.x, self.bounds.p1.x + cwdims.x / 2, self.bounds.p2.x - cwdims.x / 2)
@@ -309,6 +368,16 @@ end
 function Camera:getScale(nolerp)
 	utils.checkArg("nolerp", nolerp, "boolean", "Camera:getScale", true)
 	return nolerp and (self.starget and (type(self.starget) == "number" and self.starget or self.starget[self.skey])) or self.scale
+end
+
+function Camera:getOrigin(nolerp)
+	utils.checkArg("nolerp", nolerp, "boolean", "Camera:getOrigin", true)
+	return nolerp and (self.otarget and (vec2.isVec2(self.otarget) and self.otarget or self.otarget[self.okey])) or self.origin
+end
+
+function Camera:getWindowCenter(nolerp)
+	utils.checkArg("nolerp", nolerp, "boolean", "Camera:getWindowCenter", true)
+	return self:getOrigin(nolerp) * WINDOW_DIMS_VEC2
 end
 
 function Camera:getNormalizedScale()
@@ -360,6 +429,22 @@ function Camera:setSTarget(starget, skey, jump)
 	self.skey = skey
 end
 
+function Camera:setOTarget(otarget, okey, jump)
+	utils.checkArg("otarget", otarget, "table", "Camera:setOTarget")
+	utils.checkArg("okey", okey, "string", "Camera:setOTarget")
+	utils.checkArg("jump", jump, "boolean", "Camera:setOTarget", true)
+
+	local pos = otarget[okey]
+
+	if not utils.isVector(pos) then
+		utils.formatError("Camera:setOTarget() called with a 'okey' argument that doesn't point to a vector: %q, %q", otarget, okey)
+	end
+
+	if jump then self.pos = pos.xy end
+	self.otarget = otarget
+	self.okey = okey
+end
+
 function Camera:setBounds(p1, p2)
 	utils.checkArg("p1", p1, "vector", "Camera:setBounds")
 	utils.checkArg("p2", p2, "vector", "Camera:setBounds")
@@ -402,7 +487,7 @@ function Camera:toWorld(x, y, nolerp)
 	local angle = self:getAngle(nolerp)
 	local scale = self:getScale(nolerp)
 
-	point = point - WINDOW_CENTER_VEC2
+	point = point - self:getWindowCenter()
 	point = point:rotated(angle) / (scale * UI_SCALE)
 	point = point + pos
 
@@ -421,7 +506,7 @@ function Camera:toScreen(x, y, nolerp)
 
 	point = point - pos
 	point = point:rotated(-angle) * (scale * UI_SCALE)
-	point = point + WINDOW_CENTER_VEC2
+	point = point + self:getWindowCenter()
 
 	return point
 end

@@ -42,9 +42,11 @@ function editState:enter(from)
 		self.camera.pos = playState.camera.pos
 		self.camera.angle = playState.camera.angle
 		self.camera.scale = playState.camera.scale
+		self.camera.origin = playState.camera.origin
 		self.camera.ptarget = playState.camera.pos
 		self.camera.atarget = 0
 		self.camera.starget = 0.5 * 0.8 ^ 3
+		self.camera.otarget = vec2(0.5, 0.5)
 	end
 end
 

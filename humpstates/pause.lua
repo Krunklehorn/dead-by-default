@@ -7,7 +7,7 @@ function pauseState:enter(from)
 end
 
 function pauseState:draw(rt)
-	local width, height = lg.getDimensions()
+	local w, h = lg.getDimensions()
 
 	Background.drawEach(playState.backgrounds, playState.camera)
 
@@ -20,11 +20,11 @@ function pauseState:draw(rt)
 
 	lg.push("all")
 		stache.setColor("black", 0.5)
-		lg.rectangle("fill", 0, 0, width, height)
+		lg.rectangle("fill", 0, 0, w, h)
 
 		stache.setColor("white", 0.8)
 		stache.setFont("btnfont_rls")
-		stache.printf{50 * UI_SCALE_FLOORED, "Paused", width / 2, height / 2, xalign = "center", yalign = "center"}
+		stache.printf{50 * UI_SCALE_FLOORED, "Paused", w / 2, h / 2, xalign = "center", yalign = "center"}
 	lg.pop()
 end
 
