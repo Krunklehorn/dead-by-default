@@ -85,6 +85,20 @@ end
 
 function BoxBrush:instanceOf(class) return class == BoxBrush end
 
+function BoxBrush:payload(ptr, index, camera, scale)
+	local pos = camera:toScreen(self.pos)
+	local hdims = self.hdims:scaled(scale)
+	local angle = -(self.angle - camera.angle)
+
+	ptr[index + 0] = pos.x
+	ptr[index + 1] = pos.y
+	ptr[index + 2] = hdims.x
+	ptr[index + 3] = hdims.y
+	ptr[index + 4] = math.cos(angle)
+	ptr[index + 5] = math.sin(angle)
+	ptr[index + 6] = self.radius * scale
+end
+
 BoxBrush.draw = BoxCollider.draw
 BoxBrush.getCastBounds = BoxCollider.getCastBounds
 BoxBrush.pick = BoxCollider.pick

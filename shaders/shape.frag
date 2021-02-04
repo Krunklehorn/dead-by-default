@@ -8,10 +8,11 @@
 #define toLinear gammaCorrectColorPrecise
 #define toGamma unGammaCorrectColorPrecise
 
-uniform bool LUMINANCE = true;
-uniform bool DEBUG_CLIPPING = false;
 uniform float LINE_WIDTH = 1;
 uniform float realtime = 0;
+uniform Image front;
+uniform Image lighting;
+uniform float height;
 
 /*
 struct Circle {
@@ -33,9 +34,6 @@ struct Light {
 	vec4 color;
 };
 */
-
-uniform Image canvas;
-uniform float height;
 
 //uniform Circle circles[SDF_MAX_BRUSHES];
 //uniform Box boxes[SDF_MAX_BRUSHES];
@@ -114,70 +112,6 @@ float sceneDist(vec2 xy) {
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
-// https://www.shadertoy.com/view/4dfXDn
-/////////////////////////////////////////////////////////////////////
-
-float shadow(vec2 xy, vec2 delta, float ld, vec2 pos, float radius)
-{
-	// from pixel to light
-	vec2 dir = normalize(delta);
-
-	// fraction of light visible, starts at one radius (second half added in the end);
-	float lf = radius * ld;
-
-	// distance traveled
-	float dt = 0.01;
-
-	for (int i = 0; i < 64; ++i)
-	{
-		// distance to scene at current position
-		// edgebias enables a shimmer around borders
-		float sd = sceneDist(xy + dir * dt) + edgebias;
-
-		// early out when this ray is guaranteed to be full shadow
-		if (sd < -radius)
-			return 0;
-
-		// width of cone-overlap at light
-		// 0 in center, so 50% overlap: add one radius outside of loop to get total coverage
-		// should be '(sd / dt) * ld', but '*ld' outside of loop
-		lf = min(lf, sd / dt);
-
-		// move ahead
-		dt += max(1, abs(sd));
-		if (dt > ld) break;
-	}
-
-	// multiply by ld to get the real projected overlap (moved out of loop)
-	// add one radius, before between -radius and + radius
-	// normalize to 1 ( / 2*radius)
-	lf = clamp((lf * ld + radius) / (2 * radius), 0, 1);
-	lf = smoothstep(0, 1, lf);
-
-	return lf;
-}
-
-vec4 addLight(vec2 xy, vec2 pos, vec4 color, float range, float radius)
-{
-	// from light to pixel
-	vec2 delta = xy - pos;
-	float ld = length(delta);
-
-	// out of range
-	if (ld > range) return vec4(0);
-
-	// falloff
-	float fall = (range - ld) / range;
-
-	// center pixel fix
-	if (ld < 1) return color;
-
-	// shadow
-	return color * shadow(xy, -delta, ld, pos, radius) * (fall * fall);
-}
-
-/////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////
 // https://www.shadertoy.com/view/MslGR8
 /////////////////////////////////////////////////////////////////////
 
@@ -240,8 +174,8 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	float sdist = sceneDist(xy);
 	float edge = clamp(1 + (LINE_WIDTH - 1 - abs(sdist)) / 1.5, 0, 1);
 	float depth = mix(0.05, 0.8, clamp((height - 128) / 255, 0, 1));
-	vec4 lighting = vec4(0);
-	vec4 previous = Texel(canvas, uv);
+	vec4 lighting = Texel(lighting, uv);
+	vec4 previous = Texel(front, uv);
 
 	// TODO: use color groups instead of depth for color
 	// TODO: use stencil buffer to completely skip the lighting payload when inside a shape
@@ -249,49 +183,22 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	// TODO: should we use subtractive lights? ... or global color correction?
 	// BUG: transparency works, but cascades multiplicatively, causing lower heights to be more transparent
 
-	// Inside the shape, apply color only
+	// Inside the shape
 	if (sdist < -edgebias) {
 		color.rgb = color.rgb * depth;
 		color.a = 0.8;
 	}
-	else {
-		if (nLights > 0) {
-			//for (int i = 0; i < nLights; i++) {
-			for (int i = 0; i < nLights; i += 2) {
-				lighting += addLight(xy, lights[i].xy,
-										 LUMINANCE ? lights[i + 1] : lights[i + 1] * lights[i + 1].a,
-										 lights[i].z,
-										 lights[i].w);
-				/*lighting += addLight(xy, light.pos_range_radius.xy,
-										 LUMINANCE ? light.color : light.color * light.color.a,
-										 light.pos_range_radius.z,
-										 light.pos_range_radius.w);*/
-			}
-		}
-
-		if (LUMINANCE) lighting = alphaToLuminance(lighting);
-
-		if (DEBUG_CLIPPING) {
-			if (lighting.r >= 1 && lighting.g >= 1 && lighting.b >= 1)
-				return vec4(vec3(mod(floor(xy.x / 10) + floor(xy.y / 10), 2)), 1); // checkerboard
-			else if (lighting.r >= 1) return vec4(1, 0, 1, 1); // cyan
-			else if (lighting.g >= 1) return vec4(1, 1, 0, 1); // magenta
-			else if (lighting.b >= 1) return vec4(0, 1, 1, 1); // yellow
-		}
-
-		// Apply color and light
-		if (sdist < 0) { // Inside half of the edge
-			color.rgb = color.rgb * depth + mix(vec3(0), lighting.rgb, edge);
-			color.a = mix(0.8, 1, edge);
-		}
-		else if (sdist < edgebias) { // Outside half of the edge
-			color.rgb = mix(previous.rgb + lighting.rgb, color.rgb * depth, edge) + mix(vec3(0), lighting.rgb, edge);
-			color.a = mix(previous.a, 1, edge);
-		}
-		else { // Outside the shape
-			color.rgb = previous.rgb + lighting.rgb;
-			color.a = previous.a;
-		}
+	else if (sdist < 0) { // Inside half of the edge
+		color.rgb = color.rgb * depth + mix(vec3(0), lighting.rgb, edge);
+		color.a = mix(0.8, 1, edge);
+	}
+	else if (sdist < edgebias) { // Outside half of the edge
+		color.rgb = mix(previous.rgb + lighting.rgb, color.rgb * depth, edge) + mix(vec3(0), lighting.rgb, edge);
+		color.a = mix(previous.a, 1, edge);
+	}
+	else { // Outside the shape
+		color.rgb = previous.rgb + lighting.rgb;
+		color.a = previous.a;
 	}
 
 	color = toGamma(color); // sRGB-space

@@ -66,7 +66,6 @@ function LineCollider:draw(color, scale)
 	scale = scale or 1
 
 	lg.push("all")
-
 		lg.setShader(shader)
 			stache.setColor(color)
 			shader:send("LINE_WIDTH", LINE_WIDTH)

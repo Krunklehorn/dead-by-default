@@ -61,6 +61,19 @@ function Light:draw()
 	end
 end
 
+function Light:payload(ptr, index, camera, scale)
+	local pos = camera:toScreen(self.pos.xy)
+
+	ptr[index + 0] = pos.x
+	ptr[index + 1] = pos.y
+	ptr[index + 2] = self.range * scale
+	ptr[index + 3] = self.radius * scale
+	ptr[index + 4] = self.color.x
+	ptr[index + 5] = self.color.y
+	ptr[index + 6] = self.color.z
+	ptr[index + 7] = self.intensity
+end
+
 function Light:pick(point)
 	utils.checkArg("point", point, "vec2", "Light:pick")
 

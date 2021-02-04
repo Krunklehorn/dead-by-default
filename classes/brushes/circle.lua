@@ -50,6 +50,14 @@ end
 
 function CircleBrush:instanceOf(class) return class == CircleBrush end
 
+function CircleBrush:payload(ptr, index, camera, scale)
+	local pos = camera:toScreen(self.pos)
+
+	ptr[index + 0] = pos.x
+	ptr[index + 1] = pos.y
+	ptr[index + 2] = self.radius * scale
+end
+
 CircleBrush.draw = CircleCollider.draw
 CircleBrush.getCastBounds = CircleCollider.getCastBounds
 CircleBrush.pick = CircleCollider.pick

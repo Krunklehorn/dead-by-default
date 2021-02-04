@@ -3,8 +3,12 @@ UI_SCALE = nil
 UI_SCALE_FLOORED = nil
 WINDOW_DIMS_VEC2 = nil
 WINDOW_CENTER_VEC2 = nil
-SDF_CANVAS = nil
+SDF_STENCIL = nil
+SDF_LIGHT = nil
+SDF_FRONT = nil
+SDF_BACK = nil
 LUMINANCE = true
+VISIBILITY = true
 
 DEBUG_DRAW = true
 DEBUG_INPUT = false

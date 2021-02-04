@@ -118,6 +118,7 @@ Color Improvements
 - map-wide color correction
 
 Shader Improvements
+- visibility occlusion :heavy_check_mark:
 - single uniform list for more objects per blend layer
 - arcs, polygons and bezier support
 - more boolean operations

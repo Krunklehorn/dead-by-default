@@ -56,6 +56,18 @@ end
 
 function LineBrush:instanceOf(class) return class == LineBrush end
 
+function LineBrush:payload(ptr, index, camera, scale)
+	local pos = camera:toScreen(self.p1)
+	local delta = self.delta:scaled(scale):rotated(-camera.angle)
+
+	ptr[index + 0] = pos.x
+	ptr[index + 1] = pos.y
+	ptr[index + 2] = delta.x
+	ptr[index + 3] = delta.y
+	ptr[index + 4] = delta.x * delta.x + delta.y * delta.y
+	ptr[index + 5] = self.radius * scale
+end
+
 LineBrush.draw = LineCollider.draw
 LineBrush.getCastBounds = LineCollider.getCastBounds
 LineBrush.pick = LineCollider.pick
