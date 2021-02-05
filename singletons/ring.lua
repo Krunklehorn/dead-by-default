@@ -23,7 +23,6 @@ function ring.__newindex(_, key, value)
 end
 
 function ring.wrap(i) return utils.wrap(i, 1, NET_RING_FRAMES + 1) end
-function ring.frame(i) return ring.wrap(ring.cursor - ring.roll - (i - 1)) end
 function ring.curr() return ring.wrap(ring.cursor - ring.roll) end
 function ring.prev() return ring.wrap(ring.cursor - ring.roll - 1) end
 

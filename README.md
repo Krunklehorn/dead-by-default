@@ -90,6 +90,8 @@ When the "game" itself is ready to be played...
 | 5 | Light |
 | 6 | Vault |
 | Del | Delete |
+| Ctrl + Z | Undo |
+| Ctrl + Shift + Z | Redo |
 | J | Save |
 | K | Load |
 | Esc | Deselect |
@@ -104,6 +106,7 @@ Editor Improvements
 - moving tools to a toolbar menu
 - property editing through a menu widget
 - better brush placement options (by corners or by edges w/wo radius etc.)
+- undo / redo history buffer :heavy_check_mark:
 - selection system :heavy_check_mark:
 - radius handling :heavy_check_mark:
 - selection groups and lock toggles
@@ -130,6 +133,7 @@ Core Improvements
 - C-side pool allocator for object lists (if necessary)
 - object creation, destruction and resurrection system to support in-editor rollback features (i.e. multiplayer!)
 - state interpolation to finish decoupling rendering from tickrate
+- world state data should be array + hash hybrids
 
 
 # Special Thanks

@@ -305,7 +305,7 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an instance of class '%s': %q", key, class, query.name, value)
 			end
 		else
-			utils.formatError("checkSet() called with a 'query' argument that hasn't been setup for type-checking yet: %q", query)
+			utils.formatError("checkSet() called with a query that hasn't been setup for type-checking yet: %q", query)
 		end
 	end
 

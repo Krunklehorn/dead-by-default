@@ -3,20 +3,29 @@ editState = {
 	grid = nil,
 	selection = {},
 	handles = {},
+	history = {},
+	cursor = 1,
+	roll = 0,
 	pickHandle = nil,
+	pickValue = nil,
 	activeTool = "none",
 	toolState = nil,
+	pmspos = nil,
 	pmwpos = nil,
 	sensitivity = 1,
 	zoomToCursor = true
 }
 
-local function isDownPrimary() return lm.isDown(1) and not lm.isDown(2) and not lm.isDown(3) end
-local function isDownSecondary() return lm.isDown(2) and not lm.isDown(1) and not lm.isDown(3) end
-local function isDownTertiary() return lm.isDown(3) and not lm.isDown(1) and not lm.isDown(2) end
-local function isButtonPrimary(button) return button == 1 and not lm.isDown(2) and not lm.isDown(3) end
-local function isButtonSecondary(button) return button == 2 and not lm.isDown(1) and not lm.isDown(3) end
-local function isButtonTertiary(button) return button == 3 and not lm.isDown(1) and not lm.isDown(2) end
+local function onlyDownPrimary() return lm.isDown(1) and not lm.isDown(2) and not lm.isDown(3) end
+local function onlyDownSecondary() return lm.isDown(2) and not lm.isDown(1) and not lm.isDown(3) end
+local function onlyDownTertiary() return lm.isDown(3) and not lm.isDown(1) and not lm.isDown(2) end
+local function onlyButtonPrimary(button) return button == 1 and not lm.isDown(2) and not lm.isDown(3) end
+local function onlyButtonSecondary(button) return button == 2 and not lm.isDown(1) and not lm.isDown(3) end
+local function onlyButtonTertiary(button) return button == 3 and not lm.isDown(1) and not lm.isDown(2) end
+
+local function wrap(i) return utils.wrap(i, 1, EDIT_RING_ACTIONS + 1) end
+local function curr() return wrap(editState.cursor - editState.roll) end
+local function prev() return wrap(editState.cursor - editState.roll - 1) end
 
 function editState:init()
 	self.camera = Camera{scale = 0.5 * 0.8 ^ 3, pblend = 0.75, ablend = 0.75, sblend = 0.75}
@@ -75,32 +84,32 @@ function editState:draw(rt)
 
 	self.grid:pop()
 
-	if (self.toolState or self.activeTool ~= "none") and
-		not isDownPrimary() and not self.pickHandle and
-		not isDownTertiary() and lk.isDown("lctrl") then
-			self:drawCrosshair()
-	elseif isDownPrimary() and not self.pickHandle and
-		   self.toolState and self.toolState.type == "select" then
-			   self:drawSelection()
+	if self.toolState and self.toolState.type == "select" then
+		self:drawSelection()
+	elseif lk.isDown("lctrl") and not lm.isDown(3) and self.activeTool ~= "none" then
+		self:drawCrosshair()
 	end
 end
 
 function editState:mousepressed(x, y, button)
 	local scale = self.camera:getNormalizedScale()
+	local mspos = vec2(x, y)
 	local mwpos = self.camera:toWorld(x, y)
 
-	if isButtonPrimary(button) and not self.pickHandle then
+	if onlyButtonPrimary(button) and not self.pickHandle then
 		for h = 1, #self.handles do
 			local handle = self.handles[h]:pick(mwpos, scale, "select")
 
 			if handle then
 				self.pickHandle = handle
+				self.pickValue = handle:getValue()
 				break
 			end
 		end
 
+		self.pmspos = mspos
 		self.pmwpos = mwpos
-	elseif isButtonSecondary(button) and not self.toolState then
+	elseif onlyButtonSecondary(button) and not self.toolState then
 		local delete
 
 		for h = 1, #self.handles do
@@ -112,6 +121,7 @@ function editState:mousepressed(x, y, button)
 		end
 
 		if delete then
+			self:record("delete", delete)
 			self:delete(delete)
 		elseif self.activeTool ~= "none" then
 			local height = nil
@@ -135,22 +145,28 @@ function editState:mousepressed(x, y, button)
 			elseif self.activeTool == "light" then obj = world.addEntity(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = 25 })
 			elseif self.activeTool == "vault" then obj = world.addEntity(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
 
+			self:record("add", obj)
 			self.toolState = { type = self.activeTool, obj = obj  }
 			self:setSelect(obj)
-			self.pmwpos = mwpos
 		else
 			-- TODO: widget menu goes here!
 			self:deselect()
 		end
-	elseif isButtonTertiary(button) then
+
+		self.pmspos = mspos
+		self.pmwpos = mwpos
+	elseif onlyButtonTertiary(button) then
 		lm.setRelativeMode(true)
+		self.pmspos = mspos
 		self.pmwpos = mwpos
 	end
 end
 
 function editState:mousereleased(x, y, button)
-	if isButtonPrimary(button) then
-		if not self.pickHandle and not self.toolState then
+	if onlyButtonPrimary(button) then
+		if self.pickHandle then
+			self:record("modify", self.pickHandle)
+		elseif not self.toolState then
 			local mwpos = self.camera:toWorld(x, y)
 			local height = nil
 			local selection = nil
@@ -180,8 +196,8 @@ function editState:mousereleased(x, y, button)
 		end
 
 		self:clearState()
-	elseif isButtonSecondary(button) then self:clearState()
-	elseif isButtonTertiary(button) then
+	elseif onlyButtonSecondary(button) then self:clearState()
+	elseif onlyButtonTertiary(button) then
 		lm.setRelativeMode(false)
 		lm.setPosition(self.camera:toScreen(self.pmwpos):split())
 
@@ -197,11 +213,13 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 	if self.pickHandle then
 		self.pickHandle:drag(mwpos, self.grid:minorInterval(true))
 	elseif self.toolState then
+		local toolType = self.toolState.type
+		local delta
+
 		if toolType ~= "select" and lk.isDown("lctrl") then
 			mwpos = mwpos:snapped(self.grid:minorInterval(true)) end
 
-		local toolType = self.toolState.type
-		local delta = mwpos - self.pmwpos
+		delta = mwpos - self.pmwpos
 
 		if toolType == "select" then
 			local selection = {}
@@ -236,8 +254,12 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 		elseif toolType == "line" then self.toolState.obj.p2 = self.pmwpos + delta
 		elseif toolType == "light" then self.toolState.obj.range = math.max(delta.length, 25)
 		elseif toolType == "vault" then self.toolState.obj.bow = delta end
-	elseif lm.isDown(1) then
-		self.toolState = { type = "select" }
+	elseif onlyDownPrimary() and self.pmspos then
+		local mspos = vec2(lm.getPosition())
+		local dspos = mspos - self.pmspos
+
+		if dspos.length >= 5 then
+			self.toolState = { type = "select" } end
 	elseif lm.isDown(3) then
 		self.camera:move(-delta * self.sensitivity)
 	else
@@ -253,11 +275,16 @@ function editState:keypressed(key)
 	elseif key == "4" then self.activeTool = "line"
 	elseif key == "5" then self.activeTool = "light"
 	elseif key == "6" then self.activeTool = "vault"
-	elseif key == "delete" then self:delete()
+	elseif key == "delete" then
+		self:record("delete")
+		self:delete()
 	elseif key == "j" then world.save()
 	elseif key == "k" then
 		world.load()
 		self:deselect()
+	elseif key == "z" and lk.isDown("lctrl") then
+		if lk.isDown("lshift") then self:redo()
+		else self:undo() end
 	elseif key == "backspace" then
 		utils.switch(titleState)
 	elseif key == "return" then
@@ -270,17 +297,16 @@ end
 
 function editState:wheelmoved(x, y)
 	local mwpos = self.camera:getMouseWorld(true)
-	local mspos = vec2(lm.getPosition())
 
 	if y ~= 0 then
 		self.camera:zoom(y < 0 and 0.8 or 1.25) end
 
 	if self.zoomToCursor then
-		mwpos = self.camera:toWorld(mspos.x, mspos.y, true) - mwpos
+		mwpos = self.camera:getMouseWorld(true) - mwpos
 		self.camera:move(-mwpos)
 	end
 
-	self:mousemoved(mspos.x, mspos.y, 0, 0, false)
+	self:mousemoved(lm.getX(), lm.getY(), 0, 0, false)
 end
 
 function editState:drawCrosshair()
@@ -297,17 +323,20 @@ function editState:drawCrosshair()
 end
 
 function editState:drawSelection()
-	local mwpos = self.camera:getMouseWorld(true)
-	local mspos, pmspos
-
-	mspos = self.camera:toScreen(mwpos)
-	pmspos = self.camera:toScreen(self.pmwpos)
+	local dspos = vec2(lm.getPosition()) - self.pmspos
 
 	lg.push("all")
+		lg.translate(self.pmspos:split())
 		stache.setColor("white", 1)
-		lg.rectangle("line", pmspos.x, pmspos.y, (mspos - pmspos):split())
-		stache.setColor("white", 0.5)
-		lg.rectangle("fill", pmspos.x, pmspos.y, (mspos - pmspos):split())
+		if dspos.nearZero then
+			lg.circle("fill", 0, 0, LINE_WIDTH)
+		elseif utils.nearZero(dspos.x) or utils.nearZero(dspos.y) then
+			lg.line(0, 0, dspos:split())
+		else
+			lg.rectangle("line", 0, 0, dspos:split())
+			stache.setColor("white", 0.5)
+			lg.rectangle("fill", 0, 0, dspos:split())
+		end
 	lg.pop()
 end
 
@@ -425,6 +454,65 @@ function editState:delete(obj)
 	end
 end
 
+function editState:record(action, obj)
+	utils.checkArg("action", action, "string", "editState:record")
+
+	if action == "add" then
+		self.history[curr()] = { action = action, obj = obj }
+	elseif action == "delete" then
+		if not obj then
+			obj = {}
+			for o = 1, #self.selection do
+				obj[#obj + 1] = self.selection[o] end
+		end
+
+		self.history[curr()] = { action = action, obj = obj }
+	elseif action == "modify" then
+		self.history[curr()] = { action = action, obj = obj.target, key = obj:getKey(), old = self.pickValue, new = obj:getValue() }
+	end
+
+	editState.cursor = wrap(editState.cursor - editState.roll + 1)
+	editState.roll = 0
+end
+
+function editState:undo()
+	if self.history[prev()] and editState.roll < EDIT_RING_ACTIONS then
+		self:deselect()
+
+		local history = self.history[prev()]
+		local action = history.action
+		local obj = history.obj
+
+		if action == "add" then
+			self:delete(obj)
+		elseif action == "delete" then
+			world.insert(obj)
+		elseif action == "modify" then
+			obj[history.key] = history.old
+		end
+
+		editState.roll = editState.roll + 1
+	end
+end
+
+function editState:redo()
+	if editState.roll > 0 then
+		local history = self.history[curr()]
+		local action = history.action
+		local obj = history.obj
+
+		if action == "add" then
+			world.insert(obj)
+		elseif action == "delete" then
+			self:delete(obj)
+		elseif action == "modify" then
+			obj[history.key] = history.new
+		end
+
+		editState.roll = editState.roll - 1
+	end
+end
+
 function editState:addHandles(obj)
 	utils.checkArg("obj", obj, "indexable", "editState:addHandles")
 
@@ -475,6 +563,7 @@ function editState:clearState()
 		self.pickHandle = nil
 	end
 
+	self.pickValue = nil
 	self.toolState = nil
 	self.pmwpos = nil
 end

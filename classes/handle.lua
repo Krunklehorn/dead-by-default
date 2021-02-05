@@ -10,9 +10,13 @@ Handle = class("Handle", {
 	ppos = nil,
 	pdelta = nil,
 	pmwpos = nil
-}):abstract("init", "draw" , "drag", "pick")
+}):abstract("instanceOf", "getKey", "getValue", "init", "draw" , "drag", "pick")
 
 PointHandle = Handle:extend("PointHandle")
+
+function PointHandle:instanceOf(class) return class == PointHandle end
+function PointHandle:getKey() return self.pkey end
+function PointHandle:getValue() return self.target[self.pkey].copy end
 
 function PointHandle:init(target, pkey)
 	utils.checkArg("target", target, "indexable", "PointHandle:init")
@@ -72,7 +76,7 @@ function PointHandle:pick(mwpos, scale, state)
 	   mwpos.y >= top and mwpos.y <= bottom then
 		if state then
 			if state == "select" then
-				Handle.ppos = pos.copy
+				Handle.ppos = pos
 				Handle.pmwpos = mwpos
 			end
 
@@ -88,6 +92,10 @@ function PointHandle:pick(mwpos, scale, state)
 end
 
 VectorHandle = Handle:extend("VectorHandle")
+
+function VectorHandle:instanceOf(class) return class == VectorHandle end
+function VectorHandle:getKey() return self.dkey end
+function VectorHandle:getValue() return self.target[self.dkey].copy end
 
 function VectorHandle:init(target, pkey, dkey)
 	utils.checkArg("target", target, "indexable", "VectorHandle:init")
@@ -142,13 +150,13 @@ function VectorHandle:pick(mwpos, scale, state)
 	scale = utils.clamp(scale, Handle.scaleMin, Handle.scaleMax)
 
 	local pos = self.target[self.pkey].xy
-	local delta = self.target[self.dkey]
+	local delta = self.target[self.dkey].copy
 	local radius = Handle.radius / scale
 
 	if (pos + delta - mwpos).length <= radius then
 		if state then
 			if state == "select" then
-				Handle.pdelta = delta.copy
+				Handle.pdelta = delta
 				Handle.pmwpos = mwpos
 			end
 
@@ -164,6 +172,10 @@ function VectorHandle:pick(mwpos, scale, state)
 end
 
 RadiusHandle = Handle:extend("RadiusHandle")
+
+function RadiusHandle:instanceOf(class) return class == RadiusHandle end
+function RadiusHandle:getKey() return self.rkey end
+function RadiusHandle:getValue() return self.target[self.rkey] end
 
 function RadiusHandle:init(target, rkey)
 	utils.checkArg("target", target, "indexable", "RadiusHandle:init")

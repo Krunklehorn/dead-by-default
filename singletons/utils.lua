@@ -120,7 +120,7 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 				utils.formatError("%s() called with a '%s' argument that isn't an instance of class '%s': %q", func, key, query.name, arg)
 			end
 		else
-			utils.formatError("checkArg() called with a 'query' argument that hasn't been setup for type-checking yet: %q", query)
+			utils.formatError("checkArg() called with a query that hasn't been setup for type-checking yet: %q", query)
 		end
 	end
 

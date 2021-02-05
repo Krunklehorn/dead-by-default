@@ -69,7 +69,7 @@ function Brush.batchSDF(brushes, entities)
 			local next = brushes[b + 1]
 
 			if nCircles >= SDF_MAX_BRUSHES or nBoxes >= SDF_MAX_BRUSHES or nLines >= SDF_MAX_BRUSHES then
-				utils.formatError("Brush.batchSDF() attempted to exceed a maximum for one or more SDF payloads: %s, %s, %s", nCircles, nBoxes, nLines) end
+				utils.formatError("Brush.batchSDF() attempted to exceed a maximum for one or more SDF payloads: %q, %q, %q", nCircles, nBoxes, nLines) end
 
 			if brush:instanceOf(CircleBrush) then
 				brush:payload(circles_floatptr, nCircles * 4, camera, scale)
@@ -87,7 +87,7 @@ function Brush.batchSDF(brushes, entities)
 					local entity = entities[e]
 
 					if nLights >= SDF_MAX_LIGHTS then
-						utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %s", nLights) end
+						utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %q", nLights) end
 
 					if entity:instanceOf(Light) and entity.pos.z == brush.height then
 						entity:payload(lights_floatptr, nLights * 8, camera, scale)

@@ -149,6 +149,39 @@ function world.load()
 	end
 end
 
+function world.insert(obj)
+	if Brush.isBrush(obj) then
+		local b = 1
+
+		while b <= #world.brushes do
+			if obj.height < world.brushes[b].height then
+				break end
+
+			b = b + 1
+		end
+
+		table.insert(world.brushes, b, obj)
+	elseif Trigger.isTrigger(obj) then
+		local t = 1
+
+		while t <= #world.triggers do
+			if obj.height < world.triggers[t].height then
+				break end
+
+			t = t + 1
+		end
+
+		table.insert(world.triggers, t, obj)
+	elseif Agent.isAgent(obj) then
+		world.agents[#world.agents + 1] = obj
+	elseif Entity.isEntity(obj) then
+		world.entities[#world.entities + 1] = obj
+	else
+		for o = 1, #obj do
+			world.insert(obj[o]) end
+	end
+end
+
 function world.addBrush(ctor, params)
 	utils.checkArg("ctor", ctor, "table", "world.addBrush")
 	utils.checkArg("params", params, "table", "world.addBrush")
