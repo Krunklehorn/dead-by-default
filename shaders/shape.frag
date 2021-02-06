@@ -12,6 +12,7 @@ uniform float LINE_WIDTH = 1;
 uniform float realtime = 0;
 uniform Image front;
 uniform Image lighting;
+uniform Image decals;
 uniform float height;
 
 /*
@@ -47,7 +48,6 @@ uniform vec4 lights[SDF_MAX_LIGHTS * 2];
 uniform int nCircles;
 uniform int nBoxes;
 uniform int nLines;
-uniform int nLights;
 
 vec2 CCW(vec2 v, float c, float s) {
 	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
@@ -174,8 +174,9 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	float sdist = sceneDist(xy);
 	float edge = clamp(1 + (LINE_WIDTH - 1 - abs(sdist)) / 1.5, 0, 1);
 	float depth = mix(0.05, 0.8, clamp((height - 128) / 255, 0, 1));
+	vec4 front = Texel(front, uv);
 	vec4 lighting = Texel(lighting, uv);
-	vec4 previous = Texel(front, uv);
+	vec4 decals = Texel(decals, uv);
 
 	// TODO: use color groups instead of depth for color
 	// TODO: use stencil buffer to completely skip the lighting payload when inside a shape
@@ -193,12 +194,12 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 		color.a = mix(0.8, 1, edge);
 	}
 	else if (sdist < edgebias) { // Outside half of the edge
-		color.rgb = mix(previous.rgb + lighting.rgb, color.rgb * depth, edge) + mix(vec3(0), lighting.rgb, edge);
-		color.a = mix(previous.a, 1, edge);
+		color.rgb = mix(front.rgb + lighting.rgb + decals.rgb, color.rgb * depth, edge) + mix(vec3(0), lighting.rgb, edge);
+		color.a = mix(front.a, 1, edge);
 	}
 	else { // Outside the shape
-		color.rgb = previous.rgb + lighting.rgb;
-		color.a = previous.a;
+		color.rgb = front.rgb + lighting.rgb + decals.rgb;
+		color.a = front.a;
 	}
 
 	color = toGamma(color); // sRGB-space

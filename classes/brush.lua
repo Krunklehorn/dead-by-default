@@ -3,7 +3,7 @@ local ffi = require "ffi"
 ffi.cdef[[
 	typedef struct _Brush {
 		double height;
-		const char* color;
+		vec3 color;
 	} Brush;
 ]]
 
@@ -60,8 +60,6 @@ function Brush.batchSDF(brushes, entities)
 			lg.stencil(stencilFunc, "replace", 1)
 		end
 
-		lg.setBlendMode("replace")
-
 		local nCircles, nBoxes, nLines, nLights = 0, 0, 0, 0
 
 		for b = 1, #brushes do
@@ -83,17 +81,35 @@ function Brush.batchSDF(brushes, entities)
 			end
 
 			if next == nil or next.height > brush.height then
+				local decals = {}
+
 				for e = 1, #entities do
 					local entity = entities[e]
 
 					if nLights >= SDF_MAX_LIGHTS then
 						utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %q", nLights) end
 
-					if entity:instanceOf(Light) and entity.pos.z == brush.height then
-						entity:payload(lights_floatptr, nLights * 8, camera, scale)
-						nLights = nLights + 1
+					if entity:instanceOf(Decal) then
+						decals[#decals + 1] = entity
+					elseif entity:instanceOf(Light) then
+						if entity.pos.z == brush.height then
+							entity:payload(lights_floatptr, nLights * 8, camera, scale)
+							nLights = nLights + 1
+						end
 					end
 				end
+
+				if #decals > 0 then
+					lg.setCanvas{Decal.canvas, depthstencil = SDF_STENCIL}
+					lg.setStencilTest("equal", 0)
+					lg.setBlendMode("alpha")
+					lg.clear(true, false, false)
+
+					for d = 1, #decals do
+						decals[d]:draw(camera) end
+				end
+
+				lg.setBlendMode("replace")
 
 				if nLights > 0 then
 					if humpstate.current() == editState then
@@ -133,6 +149,7 @@ function Brush.batchSDF(brushes, entities)
 					utils.send(shapeShader, "LINE_WIDTH", LINE_WIDTH)
 					utils.send(shapeShader, "front", SDF_FRONT)
 					utils.send(shapeShader, "lighting", SDF_LIGHT)
+					utils.send(shapeShader, "decals", Decal.canvas)
 					utils.send(shapeShader, "height", brush.height)
 
 					if nCircles > 0 then shapeShader:send("circles", circles_data, 0, nCircles * 4 * 4) end

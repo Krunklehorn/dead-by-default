@@ -131,6 +131,7 @@ function love.resize(w, h)
 
 	Background.overdraw = math.sqrt((w / h) ^ 2 + 1)
 	Background.canvas = lg.newCanvas()
+	Decal.canvas = lg.newCanvas()
 
 	if not lw.getFullscreen() then
 		local dw, dh = lw.getDesktopDimensions()

@@ -58,10 +58,10 @@ function Background:draw(camera)
 		lg.setCanvas(Background.canvas)
 		lg.clear()
 
-		lg.translate(center.x, center.y)
+		lg.translate(center:split())
 		lg.rotate(-camera.angle)
 		lg.scale(camera:getNormalizedScale())
-		lg.translate(-center.x * overdraw, -center.y * overdraw)
+		lg.translate((-center * overdraw):split())
 
 		stache.setColor(self.color, self.alpha)
 		self.sprite:setFilter("linear", "linear")

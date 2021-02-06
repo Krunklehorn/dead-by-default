@@ -19,13 +19,13 @@ function CircleBrush:__call(params)
 	local vel = utils.checkArg("vel", params[2] or params.vel, "vec2", "CircleBrush:__call", true)
 	local radius = utils.checkArg("radius", params[3] or params.radius, "number", "CircleBrush:__call", true)
 	local height = utils.checkArg("height", params[4] or params.height, "number", "CircleBrush:__call", true)
-	local color = utils.checkArg("color", params[5] or params.color, "asset", "CircleBrush:__call", true)
+	local color = utils.checkArg("color", params[5] or params.color, "vec3", "CircleBrush:__call", true)
 
 	pos = pos or vec2()
 	vel = vel or vec2()
 	radius = radius or 0
 	height = height or 0
-	color = color or "white"
+	color = color or vec3()
 
 	return CircleBrush.new(utils.newID(), pos, vel, radius, height, color)
 end

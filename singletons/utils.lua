@@ -26,6 +26,10 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 			if type(arg) ~= query then
 				utils.formatError("%s() called with a '%s' argument that isn't a %s: %q", func, key, query, arg)
 			end
+		elseif query == "number/string" then
+			if type(arg) ~= "number" and type(arg) ~= "string" then
+				utils.formatError("%s() called with a '%s' argument that isn't a number or string: %q", func, key, arg)
+			end
 		elseif query == "indexable" then
 			if type(arg) ~= "table" and type(arg) ~= "cdata" then
 				utils.formatError("%s() called with a '%s' argument that isn't indexable: %q", func, key, arg)
@@ -44,7 +48,7 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 			end
 		elseif query == "number/vector" then
 			if type(arg) ~= "number" and not vec2.isVec2(arg) and not vec3.isVec3(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a scalar or vector: %q", func, key, arg)
+				utils.formatError("%s() called with a '%s' argument that isn't a number or vector: %q", func, key, arg)
 			end
 		elseif query == "collider" then
 			if not Collider.isCollider(arg) then
@@ -87,10 +91,6 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 		elseif query == "instance" then
 			if not class.isInstance(arg) then
 				utils.formatError("%s() called with a '%s' argument that isn't an instance: %q", func, key, arg)
-			end
-		elseif query == "index/instance" then
-			if type(arg) ~= "number" and not class.isInstance(arg) and not Brush.isBrush(arg) and not Entity.isEntity(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't an index or instance: %q", func, key, arg)
 			end
 		elseif class.isClass(query) then
 			query = class.isClass(query) and query or query.class

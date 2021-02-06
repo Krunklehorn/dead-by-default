@@ -212,11 +212,8 @@ float visibility(vec2 xy, vec2 pos)
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 	vec4 lighting = vec4(0);
 
-	// Inside the shape, no lighting
-	if (sceneDist(xy) < -edgebias) {
-		discard;
-	}
-	else {
+	// Beyond the inside half of the edge
+	if (sceneDist(xy) >= -edgebias) {
 		//for (int i = 0; i < nLights; i++) {
 		for (int i = 0; i < nLights; i += 2) {
 			lighting += addLight(xy, lights[i].xy,
@@ -252,9 +249,7 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 			else if (lighting.g >= 1) return vec4(1, 1, 0, 1); // magenta
 			else if (lighting.b >= 1) return vec4(0, 1, 1, 1); // yellow
 		}
-
-		return lighting;
 	}
 
-	return color;
+	return lighting;
 }

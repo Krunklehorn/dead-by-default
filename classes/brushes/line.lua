@@ -20,14 +20,14 @@ function LineBrush:__call(params)
 	local vel = utils.checkArg("vel", params[3] or params.vel, "vec2", "LineBrush:__call", true)
 	local radius = utils.checkArg("radius", params[4] or params.radius, "number", "LineBrush:__call", true)
 	local height = utils.checkArg("height", params[5] or params.height, "number", "LineBrush:__call", true)
-	local color = utils.checkArg("color", params[6] or params.color, "asset", "LineBrush:__call", true)
+	local color = utils.checkArg("color", params[5] or params.color, "vec3", "LineBrush:__call", true)
 
 	p1 = p1 or vec2()
 	p2 = p2 or vec2()
 	vel = vel or vec2()
 	radius = radius or 0
 	height = height or 0
-	color = color or "white"
+	color = color or vec3()
 
 	return LineBrush.new(utils.newID(), p1, p2, vel, radius, height, color)
 end

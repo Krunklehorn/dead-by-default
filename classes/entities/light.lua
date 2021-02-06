@@ -5,9 +5,9 @@ ffi.cdef[[
 		Entity;
 		vec2 vel;
 		vec3 color;
-		float intensity;
-		float range;
-		float radius;
+		double intensity;
+		double range;
+		double radius;
 	} Light;
 ]]
 

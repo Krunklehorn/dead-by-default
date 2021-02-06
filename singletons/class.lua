@@ -214,6 +214,10 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 			if type(value) ~= query then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a %s: %q", key, class, query, value)
 			end
+		elseif query == "number/string" then
+			if type(arg) ~= "number" and type(arg) ~= "string" then
+				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a number or string: %q", key, class, value)
+			end
 		elseif query == "indexable" then
 			if type(value) ~= "table" and type(value) ~= "cdata" then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't indexable: %q", key, class, value)
@@ -238,7 +242,7 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 			copy = true
 		elseif query == "number/vector" then
 			if type(value) ~= "number" and not vec2.isVec2(value) and not vec3.isVec3(value) then
-				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a scalar or vector: %q", key, class, value)
+				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a number or vector: %q", key, class, value)
 			end
 
 			copy = true
@@ -293,10 +297,6 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 		elseif query == "instance" then
 			if not _class.isInstance(value) then
 				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an instance: %q", key, class, value)
-			end
-		elseif query == "index/instance" then
-			if type(value) ~= "number" and not _class.isInstance(value) then
-				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't an index or instance: %q", key, class, value)
 			end
 		elseif _class.isClass(query) or _class.isClass(instance) then
 			query = _class.isClass(query) and query or query.class

@@ -38,10 +38,10 @@ end
 function world.init()
 	world.addObject(BoxBrush, { hwidth = UNIT_TILE, height = 128 })
 
-	local function randVec(hl)
+	--[[local function randVec(hl)
 		return vec2(lmth.random(-hl, hl), lmth.random(-hl, hl)) end
 
-	--[[local l = 1
+	local l = 1
 	io.write("SDF_MAX_BRUSHES: "..SDF_MAX_BRUSHES.."\n")
 	io.write("HEIGHT LEVELS: "..l.."\n")
 	io.write("TOTAL BRUSHES: "..l * SDF_MAX_BRUSHES.."\n")
@@ -93,6 +93,8 @@ function world.init()
 
 	world.addObject(Light, { pos = vec3(200, 0, 144), color = vec3(1, 0, 1), intensity = 1 })
 	world.addObject(Light, { pos = vec3(-200, 0, 144), color = vec3(0, 1, 1), intensity = 1 })
+
+	world.addObject(Decal, { pos = vec3(0, 0, 128), tex = "arrowbtn_up_rls", scale = 16 })
 end
 
 function world.update(tl)
