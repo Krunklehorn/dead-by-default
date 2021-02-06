@@ -27,10 +27,10 @@ function BoxBrush:__call(params)
 	local color = utils.checkArg("color", params[8] or params.color, "asset", "BoxBrush:__call", true)
 
 	if forward and (right or angle) or (right and angle) then
-		utils.formatError("BoxBrush:init() can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
+		utils.formatError("BoxBrush constructor can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
 
 	if not hwidth and not hlength then
-		utils.formatError("BoxBrush:__call() cannot be called without an 'hwidth' or 'hlength' argument: %q, %q", hwidth, hlength) end
+		utils.formatError("BoxBrush constructor cannot be called without an 'hwidth' or 'hlength' argument: %q, %q", hwidth, hlength) end
 
 	pos = pos or vec2()
 	vel = vel or vec2()
@@ -41,7 +41,7 @@ function BoxBrush:__call(params)
 	height = height or 0
 	color = color or "white"
 
-	return BoxBrush.new("box", pos, vel, radius, angle, hwidth, hlength, height, color)
+	return BoxBrush.new(utils.newID(), pos, vel, radius, angle, hwidth, hlength, height, color)
 end
 
 function BoxBrush:__index(key)

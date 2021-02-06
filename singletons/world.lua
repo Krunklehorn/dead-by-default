@@ -3,7 +3,7 @@ local ffi = require "ffi"
 local world = {
 	commands = {},
 	states = {},
-	pointers = {},
+	pointers = setmetatable({}, { __mode = "kv" }),
 	cursor = 1,
 	roll = 0
 }
@@ -41,8 +41,7 @@ function world.init()
 	local function randVec(hl)
 		return vec2(lmth.random(-hl, hl), lmth.random(-hl, hl)) end
 
-	--[[
-	local l = 1
+	--[[local l = 1
 	io.write("SDF_MAX_BRUSHES: "..SDF_MAX_BRUSHES.."\n")
 	io.write("HEIGHT LEVELS: "..l.."\n")
 	io.write("TOTAL BRUSHES: "..l * SDF_MAX_BRUSHES.."\n")
@@ -77,10 +76,9 @@ function world.init()
 											height = height })
 			end
 		end
-	end
-	]]
+	end]]
 
-	world.load()
+	--world.load()
 	--world.save()
 
 	world.addObject(BoxTrigger, { hwidth = UNIT_TILE * 2, height = 0, onOverlap = function()
@@ -98,8 +96,10 @@ function world.init()
 end
 
 function world.update(tl)
-	for a, agent in ipairs(world.agents) do
-		agent:input(world.commands[world.curr()][a] or input.empty) end
+	for a = 1, #world.agents do
+		local agent = world.agents[a]
+		agent:input(world.commands[world.curr()][agent.id] or input.empty)
+	end
 
 	utils.updateEach(world.agents, tl)
 	utils.updateEach(world.entities, tl)
@@ -111,6 +111,15 @@ function world.draw(rt)
 	Brush.batchSDF(world.brushes, world.entities)
 	utils.drawEach(world.agents)
 	utils.drawEach(world.entities)
+end
+
+function world.getObjectArray(obj)
+	utils.checkArg("obj", obj, "indexable", "world.getObjectArray")
+
+	return Brush.isBrush(obj) and world.brushes or
+		   (Trigger.isTrigger(obj) and world.triggers or
+		   (Agent.isAgent(obj) and world.agents or
+		   (Entity.isEntity(obj) and world.entities or nil)))
 end
 
 function world.addObject(ctor, params)
@@ -126,32 +135,30 @@ end
 function world.insertObject(obj)
 	utils.checkArg("obj", obj, "indexable", "world.insertObject")
 
-	if Brush.isBrush(obj) then
-		local b = 1
+	local array = world.getObjectArray(obj)
 
-		while b <= #world.brushes do
-			if obj.height < world.brushes[b].height then
-				break end
+	if array then
+		local id = obj.id
 
-			b = b + 1
+		if array[id] then
+			utils.formatError("Attempted to insert world object using an ID that conflicts with an existing object: %q, %q, %q", obj, array[id], id) end
+
+		if Brush.isBrush(obj) or Trigger.isTrigger(obj) then
+			local i = 1
+
+			while i <= #array do
+				if obj.height < array[i].height then
+					break end
+
+				i = i + 1
+			end
+
+			table.insert(array, i, obj)
+			array[id] = obj
+		elseif Agent.isAgent(obj) or Entity.isEntity(obj) then
+			array[#array + 1] = obj
+			array[id] = obj
 		end
-
-		table.insert(world.brushes, b, obj)
-	elseif Trigger.isTrigger(obj) then
-		local t = 1
-
-		while t <= #world.triggers do
-			if obj.height < world.triggers[t].height then
-				break end
-
-			t = t + 1
-		end
-
-		table.insert(world.triggers, t, obj)
-	elseif Agent.isAgent(obj) then
-		world.agents[#world.agents + 1] = obj
-	elseif Entity.isEntity(obj) then
-		world.entities[#world.entities + 1] = obj
 	else
 		for o = 1, #obj do
 			world.insertObject(obj[o]) end
@@ -161,26 +168,21 @@ end
 function world.removeObject(obj)
 	utils.checkArg("obj", obj, "indexable", "world.removeObject")
 
-	local array
-
-	if Brush.isBrush(obj) then array = world.brushes
-	elseif Trigger.isTrigger(obj) then array = world.triggers
-	elseif Agent.isAgent(obj) then array = world.agents
-	elseif Entity.isEntity(obj) then array = world.entities
-	else
-		for o = 1, #obj do
-			world.removeObject(obj[o]) end
-
-		return
-	end
+	local array = world.getObjectArray(obj)
 
 	if array then
 		for i = 1, #array do
 			if obj == array[i] then
 				table.remove(array, i)
+				array[obj.id] = nil
 				return
 			end
 		end
+	else
+		for o = 1, #obj do
+			world.removeObject(obj[o]) end
+
+		return
 	end
 
 	utils.formatError("world.removeObject() called with a reference that should not exist: %q", obj)
@@ -197,7 +199,6 @@ function world.rollback(n)
 	world.roll = n
 
 	world.copy()
-	world.dirty()
 end
 
 function world.step()
@@ -205,37 +206,47 @@ function world.step()
 	else world.cursor = world.wrap(world.cursor + 1) end
 
 	world.copy()
-	world.dirty()
+end
+
+local function overwrite(prev, curr)
+	for k, v in pairs(curr) do
+		if k > OBJ_ID_BASE then
+			curr[k] = nil end end
+
+	for i = 1, math.max(#prev, #curr) do
+		if i <= #prev then
+			local obj = prev[i].copy
+
+			curr[i] = obj
+			curr[obj.id] = obj
+		else curr[i] = nil end
+	end
 end
 
 function world.copy() -- ugly, but performant
 	local prev = world.states[world.prev()]
 	local curr = world.states[world.curr()]
-	local p, c
 
-	p = prev.brushes
-	c = curr.brushes
-	for i = 1, math.max(#p, #c) do
-		c[i] = i <= #p and p[i].copy or nil end
+	overwrite(prev.brushes, curr.brushes)
+	overwrite(prev.triggers, curr.triggers)
+	overwrite(prev.agents, curr.agents)
+	overwrite(prev.entities, curr.entities)
 
-	p = prev.triggers
-	c = curr.triggers
-	for i = 1, math.max(#p, #c) do
-		c[i] = i <= #p and p[i].copy or nil end
+	world.dirty()
+end
 
-	p = prev.agents
-	c = curr.agents
-	for i = 1, math.max(#p, #c) do
-		c[i] = i <= #p and p[i].copy or nil end
-
-	p = prev.entities
-	c = curr.entities
-	for i = 1, math.max(#p, #c) do
-		c[i] = i <= #p and p[i].copy or nil end
+function world.dirty()
+	for _, pointer in pairs(world.pointers) do
+		pointer.dirty() end
 end
 
 function world.save()
-	local string = bitser.dumps(world.brushes)
+	local objects = {}
+
+	for b = 1, #world.brushes do objects[#objects + 1] = world.brushes[b] end
+	for b = 1, #world.entities do objects[#objects + 1] = world.entities[b] end
+
+	local string = bitser.dumps(objects)
 	local success, msg = lfs.write("brushes.dat", string)
 
 	if not success then
@@ -249,7 +260,9 @@ function world.load()
 		if not string then
 			error(msg) end
 
-		world.brushes = bitser.loads(string)
+		utils.clear(world.brushes)
+		utils.clear(world.entities)
+		world.insertObject(bitser.loads(string))
 	end
 end
 
@@ -259,40 +272,40 @@ function world.pointer(path)
 	utils.checkArg("path", path, "table", "world.pointer")
 
 	local value = nil
+	local pointer = {}
+	local string = tostring(pointer)
 
-	local pointer = {
-		__call = function()
-			if not value then
-				value = world
+	pointer.__call = function()
+		if not value then
+			value = world
 
-				for k = 1, #path do
-					if not value then
-						local strings = { "Failed to resolve a pointer path: %q" }
+			for k = 1, #path do
+				if not value then
+					local strings = { "Failed to resolve a pointer path: %q" }
 
-						for k = 1, #path do
-							strings[#strings + 1] = ", %q" end
+					for k = 1, #path do
+						strings[#strings + 1] = ", %q" end
 
-						utils.formatError(table.concat(strings), world, unpack(path))
-					else value = value[path[k]] end
-				end
+					utils.formatError(table.concat(strings), world, unpack(path))
+				else value = value[path[k]] end
 			end
+		end
 
-			return value
-		end,
-		__index = function(self, key)
-			return self()[key] end,
-		dirty = function()
-			value = nil end
-	}
+		return value
+	end
 
-	world.pointers[#world.pointers + 1] = pointer
+	pointer.__index = function(self, key)
+		return self()[key] end
+
+	pointer.__tostring = function(self)
+		return string.format("Pointer (%s) -> %s", string, self()) end
+
+	pointer.dirty = function()
+		value = nil end
+
+	world.pointers[pointer] = pointer
 
 	return setmetatable(pointer, pointer)
-end
-
-function world.dirty()
-	for p = 1, #world.pointers do
-		world.pointers[p].dirty() end
 end
 
 return setmetatable(world, world)

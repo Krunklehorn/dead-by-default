@@ -36,14 +36,14 @@ function LineTrigger:__call(params)
 	local height = utils.checkArg("height", params[5] or params.height, "number", "LineTrigger:__call", true)
 	local onOverlap = utils.checkArg("onOverlap", params[6] or params.onOverlap, "function", "Trigger:__call", true)
 
-	p1 = p1 or vec2.new()
-	p2 = p2 or vec2.new()
-	vel = vel or vec2.new()
+	p1 = p1 or vec2()
+	p2 = p2 or vec2()
+	vel = vel or vec2()
 	radius = radius or 0
 	height = height or 0
 	onOverlap = onOverlap or nil
 
-	return LineTrigger.new("line", p1, p2, vel, radius, height, onOverlap)
+	return LineTrigger.new(utils.newID(), p1, p2, vel, radius, height, onOverlap)
 end
 
 function LineTrigger:__gc()

@@ -21,11 +21,11 @@ function CircleCollider:__call(params)
 	local vel = utils.checkArg("vel", params[2] or params.vel, "vec2", "CircleCollider:__call", true)
 	local radius = utils.checkArg("radius", params[3] or params.radius, "number", "CircleCollider:__call", true)
 
-	pos = pos or vec2.new()
-	vel = vel or vec2.new()
+	pos = pos or vec2()
+	vel = vel or vec2()
 	radius = radius or 0
 
-	return CircleCollider.new("circle", pos, vel, radius)
+	return CircleCollider.new(utils.newID(), pos, vel, radius)
 end
 
 function CircleCollider:__index(key)

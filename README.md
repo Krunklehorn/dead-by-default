@@ -133,7 +133,7 @@ Core Improvements
 - C-side pool allocator for object lists (if necessary)
 - object creation, destruction and resurrection system to support in-editor rollback features (i.e. multiplayer!)
 - state interpolation to finish decoupling rendering from tickrate
-- world state data should be array + hash hybrids
+- entity IDs and mixed array+hash tables for safer opaque pointers to world data :heavy_check_mark:
 
 
 # Special Thanks

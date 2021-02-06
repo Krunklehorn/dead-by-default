@@ -1,10 +1,8 @@
 local ffi = require "ffi"
 
 ffi.cdef[[
-	typedef enum _ColliderType { circle, box, line } ColliderType;
-
 	typedef struct _Collider {
-		ColliderType type;
+		unsigned int id;
 	} Collider;
 ]]
 
@@ -53,7 +51,7 @@ function Collider:circ_circ(other)
 	local offset = self.pos - other.pos
 
 	if offset.eqZero then
-		return radii, vec2.new()
+		return radii, vec2()
 	else
 		local length = offset.length
 		return radii - length, offset / length
@@ -94,7 +92,7 @@ function Collider:circ_line(other)
 	offset2 = self.pos - other.p2
 
 	if offset1.eqZero or offset2.eqZero then
-		return radii, vec2.new() end
+		return radii, vec2() end
 
 	scalar = other.delta:dot(offset1) / other.delta.length2
 
@@ -137,7 +135,7 @@ function Collider:line_line(other)
 
 	if offset11.eqZero or offset12.eqZero or
 	   offset21.eqZero or offset22.eqZero then
-		return radii, vec2.new() end
+		return radii, vec2() end
 
 	-- Calculate distance relative to the first point
 	offsetA = offset11

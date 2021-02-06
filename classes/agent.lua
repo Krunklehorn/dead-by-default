@@ -10,6 +10,7 @@ ffi.cdef[[
 	typedef enum _VacState { none, entity, position } VacState;
 
 	typedef struct _Agent {
+		unsigned int id;
 		vec3 pos;
 		vec3 vel;
 		double angle;
@@ -29,7 +30,6 @@ ffi.cdef[[
 		bool ability;
 		bool drop;
 
-		unsigned int grndIndex;
 		double grndMoveTime;
 		double grndStepTime;
 
@@ -52,8 +52,9 @@ Agent = {
 				"walk", "run", "crouch", "crawl",
 				"svault", "mvault", "fvault",
 				"upright" },
+	grndPtrs = {},
 	vacState = ffi.typeof("VacState"),
-	vacStates = { "idle", "move", "vacuum", "air" },
+	vacStates = { "none", "entity", "position" },
 	grv = -800,
 	stepTimeWalk = 60 / 120,
 	stepTimeRun = 60 / 180,
@@ -74,7 +75,7 @@ function Agent:__call(params)
 	local radius = utils.checkArg("radius", params[5] or params.radius, "number", "Agent:init", true)
 
 	if forward and (right or angle) or (right and angle) then
-		utils.formatError("Agent:init() can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
+		utils.formatError("Agent constructor can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
 
 	pos = pos or vec3()
 	vel = vel or vec3()
@@ -82,7 +83,7 @@ function Agent:__call(params)
 	color = color or "cyan"
 	radius = radius or 45
 
-	return Agent.new(pos, vel, angle, color, { "circle", pos.xy, vel.xy * stopwatch.ticklength, radius }, "air", "upright")
+	return Agent.new(utils.newID(), pos, vel, angle, color, { utils.newID(), pos.xy, vel.xy * stopwatch.ticklength, radius }, "air", "upright")
 end
 
 function Agent:__index(key)
@@ -305,7 +306,7 @@ function Agent:update(tl)
 
 	-- Check for ground interactions...
 	if self:isGrounded() then
-		local ground = world.brushes[self.grndIndex]
+		local ground = Agent.grndPtrs[self.id]()
 
 		if self.collider:overlap(ground) < 0 then
 			local floor
@@ -313,10 +314,10 @@ function Agent:update(tl)
 			for b = 1, #world.brushes do
 				local brush = world.brushes[b]
 
-				if self.pos.z == brush.height and
-				   brush ~= ground and
+				if brush ~= ground and
+				   self.pos.z == brush.height and
 				   self.collider:overlap(brush) >= 0 then
-					floor = b
+					floor = brush
 					break
 				end
 			end
@@ -333,7 +334,7 @@ function Agent:update(tl)
 			   self.collider:overlap(brush) >= 0 then
 				self.pos.z = brush.height
 				self.vel.z = 0
-				self:setGround(b)
+				self:setGround(brush)
 				self:changeState(utils.nearZero(self.vel.length) and "idle" or "move")
 
 				break
@@ -376,7 +377,7 @@ function Agent:update(tl)
 					skip[overlap] = true
 				end
 			until not overlap
-		else
+		end--[[else
 			repeat -- continuous response, unused for now
 				local cast
 
@@ -402,7 +403,7 @@ function Agent:update(tl)
 					skip[cast.other] = true
 				end
 			until not cast
-		end
+		end]]
 
 		utils.free(skip)
 	end
@@ -426,28 +427,28 @@ function Agent:update(tl)
 				self.grndStepTime = self.grndStepTime + tl
 			end
 
-			if self.action == "walk" then
+			--[[if self.action == "walk" then
 				local stepTime = Agent.stepTimeWalk * 226 / self.vel.length
 
 				if self.grndStepTime >= stepTime then
-					--stache.play(Agent.sfx.footsteps_walk[lmth.random(1, 10)], 50, 100, 10, 10)
+					stache.play(Agent.sfx.footsteps_walk[lmth.random(1, 10)], 50, 100, 10, 10)
 					self.grndStepTime = self.grndStepTime - stepTime
 				end
 			elseif self.action == "run" then
 				local stepTime = Agent.stepTimeRun * 400 / self.vel.length
 
 				if self.grndStepTime >= stepTime then
-					--stache.play(Agent.sfx.footsteps_run[lmth.random(1, 10)], 50, 100, 10, 10)
+					stache.play(Agent.sfx.footsteps_run[lmth.random(1, 10)], 50, 100, 10, 10)
 					self.grndStepTime = self.grndStepTime - stepTime
 				end
 			elseif self.action == "crouch" then
 				local stepTime = Agent.stepTimeCrouch * 113 / self.vel.length
 
 				if self.grndStepTime >= stepTime then
-					--stache.play(Agent.sfx.footsteps_walk[lmth.random(1, 10)], 50, 100, 10, 10)
+					stache.play(Agent.sfx.footsteps_walk[lmth.random(1, 10)], 50, 100, 10, 10)
 					self.grndStepTime = self.grndStepTime - stepTime
 				end
-			end
+			end]]
 		end
 	end
 
@@ -525,18 +526,15 @@ function Agent:updateCollider(tl)
 end
 
 function Agent:isGrounded()
-	return self.grndIndex > 0
+	return Agent.grndPtrs[self.id] and Agent.grndPtrs[self.id]()
 end
 
-function Agent:setGround(index)
-	-- UNSAFE: what if the index changes or the brush is removed?
-	-- This either needs to be a pointer, or agents need to recalculate when the brush array is changed...
-	-- A message or callback system would be too complex, perhaps it's time to move the object lists to a C side pool
-	self.grndIndex = index
+function Agent:setGround(brush)
+	Agent.grndPtrs[self.id] = world.pointer{ "brushes", brush.id }
 end
 
 function Agent:clearGround()
-	self.grndIndex = 0
+	Agent.grndPtrs[self.id] = nil
 	self.grndMoveTime = 0
 	self.grndStepTime = 0
 end

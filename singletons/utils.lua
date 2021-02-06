@@ -5,29 +5,8 @@ local intptr_t1 = ffi.typeof("intptr_t[1]")
 
 local utils = {
 	fade = 0,
-	private = {
-		counters = {}
-	}
+	nextID = OBJ_ID_BASE
 }
-
-function utils.__index(_, key)
-	local utils = rawget(utils, "private")
-
-	if key == "private" then return utils end
-
-	return rawget(utils, key)
-end
-
-function utils.__newindex(_, key, value)
-	local stopwatch = rawget(stopwatch, "private")
-
-	utils.readOnly("utils", key, "counters")
-
-	if key ~= "fade" then
-		utils.formatError("Attempted to write new index '%s' to utils: %q", key, value) end
-
-	utils[key] = value
-end
 
 function utils.formatError(msg, ...)
 	local args = { n = select('#', ...), ...}
@@ -184,6 +163,11 @@ function utils.pool(initial, create, destroy)
 end
 
 utils.alloc, utils.free = utils.pool()
+
+function utils.newID()
+	utils.nextID = utils.nextID + 1
+	return utils.nextID
+end
 
 local function recursive_copy(obj, seen)
 	if seen[obj] then

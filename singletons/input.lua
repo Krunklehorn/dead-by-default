@@ -3,7 +3,7 @@ local input = {
 		active = nil
 	},
 	empty = {
-		adelta = vec2.new(),
+		adelta = vec2(),
 		right = 0,
 		left = 0,
 		down = 0,
@@ -65,14 +65,14 @@ function input.translate(tl)
 	for p = 1, #input.players do
 		local player = input.players[p]
 
-		if player.agentHndl and player.agentHndl() then
+		if player.agentPtr and player.agentPtr() then
 			local lookleft = player:down("look_left") and 1 or 0
 			local lookright = player:down("look_right") and 1 or 0
 			local adelta = receiver.mdelta * input.mouserate / tl
 
 			adelta.x = adelta.x + math.rad(lookright - lookleft) * input.stickrate
 
-			commands[player.agentIndx] = {
+			commands[player.agentId] = {
 				adelta = adelta,
 				right = player:down("right") and 1 or 0,
 				left = player:down("left") and 1 or 0,

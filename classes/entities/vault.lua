@@ -37,7 +37,7 @@ function Vault:__call(params)
 	hwidth = hwidth or 75
 	oneway = oneway or false
 
-	return Vault.new(pos, vel, angle, hwidth, oneway)
+	return Vault.new(utils.newID(), pos, vel, angle, hwidth, oneway)
 end
 
 function Vault:__index(key)

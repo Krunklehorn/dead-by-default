@@ -17,8 +17,8 @@ function Camera:__newindex(key, value)
 	elseif key == "scale" then slf[key] = self:checkSet(key, value, "number")
 	elseif key == "origin" then slf[key] = self:checkSet(key, value, "vec2")
 	elseif key == "ptarget" then
-		if value and not utils.isVector(value) and type(value) ~= "table" then
-			utils.formatError("Attempted to set 'ptarget' key of class 'Camera' to a value that isn't a vector or table: %q", value) end
+		if value and not utils.isVector(value) and not world.isPointer(value) and type(value) ~= "table" then
+			utils.formatError("Attempted to set 'ptarget' key of class 'Camera' to a value that isn't a vector, pointer or table: %q", value) end
 
 		if utils.isVector(value) then
 			slf.pkey = nil
@@ -27,8 +27,8 @@ function Camera:__newindex(key, value)
 			self:checkBounds()
 		else slf[key] = value end
 	elseif key == "atarget" then
-		if value and type(value) ~= "number" and type(value) ~= "table" then
-			utils.formatError("Attempted to set 'atarget' key of class 'Camera' to a value that isn't a number or table: %q", value) end
+		if value and type(value) ~= "number" and not world.isPointer(value) and type(value) ~= "table" then
+			utils.formatError("Attempted to set 'atarget' key of class 'Camera' to a value that isn't a number, pointer or table: %q", value) end
 
 		if type(value) == "number" then
 			value = utils.wrap(value, -math.pi, math.pi)
@@ -36,16 +36,16 @@ function Camera:__newindex(key, value)
 
 		slf[key] = value
 	elseif key == "starget" then
-		if value and type(value) ~= "number" and type(value) ~= "table" then
-			utils.formatError("Attempted to set 'starget' key of class 'Camera' to a value that isn't a number or table: %q", value) end
+		if value and type(value) ~= "number" and not world.isPointer(value) and type(value) ~= "table" then
+			utils.formatError("Attempted to set 'starget' key of class 'Camera' to a value that isn't a number, pointer or table: %q", value) end
 
 		if type(value) == "number" then
 			slf.skey = nil end
 
 		slf[key] = value
 	elseif key == "otarget" then
-		if value and not utils.isVector(value) and type(value) ~= "table" then
-			utils.formatError("Attempted to set 'otarget' key of class 'Camera' to a value that isn't a vector or table: %q", value) end
+		if value and not utils.isVector(value) and not world.isPointer(value) and type(value) ~= "table" then
+			utils.formatError("Attempted to set 'otarget' key of class 'Camera' to a value that isn't a vector, pointer or table: %q", value) end
 
 		if utils.isVector(value) then
 			slf.okey = nil
@@ -84,8 +84,8 @@ function Camera:init(params)
 	local pkey, akey, skey, okey
 
 	if ptarget then
-		if not utils.isVector(ptarget) and type(ptarget) ~= "table" then
-			utils.formatError("Camera:init() called with a 'ptarget' key that isn't a vector or table: %q", ptarget) end
+		if not utils.isVector(ptarget) and not world.isPointer(ptarget) and type(ptarget) ~= "table" then
+			utils.formatError("Camera:init() called with a 'ptarget' key that isn't a vector, pointer or table: %q", ptarget) end
 
 		if not utils.isVector(ptarget) then
 			pkey = utils.checkArg("pkey", params[9] or params.pkey, "string", "Camera:init")
@@ -96,38 +96,38 @@ function Camera:init(params)
 	end
 
 	if atarget then
-		if type(atarget) ~= "number" and type(atarget) ~= "table" then
-			utils.formatError("Camera:init() called with an 'atarget' key that isn't a number or table: %q", atarget) end
+		if type(atarget) ~= "number" and not world.isPointer(atarget) and type(atarget) ~= "table" then
+			utils.formatError("Camera:init() called with an 'atarget' key that isn't a number, pointer or table: %q", atarget) end
 
 		if type(atarget) ~= "number" then
 			akey = utils.checkArg("akey", params[10] or params.akey, "string", "Camera:init")
 
 			if type(atarget[akey]) ~= "number" then
-				utils.formatError("Camera:init() called with a 'akey' argument that doesn't point to a number: %q, %q", atarget, akey) end
+				utils.formatError("Camera:init() called with an 'akey' argument that doesn't point to a number: %q, %q", atarget, akey) end
 		end
 	end
 
 	if starget then
-		if type(starget) ~= "number" and type(starget) ~= "table" then
-			utils.formatError("Camera:init() called with an 'starget' key that isn't a number or table: %q", starget) end
+		if type(starget) ~= "number" and not world.isPointer(starget) and type(starget) ~= "table" then
+			utils.formatError("Camera:init() called with an 'starget' key that isn't a number, pointer or table: %q", starget) end
 
 		if type(starget) ~= "number" then
 			skey = utils.checkArg("skey", params[11] or params.skey, "string", "Camera:init")
 
 			if type(starget[skey]) ~= "number" then
-				utils.formatError("Camera:init() called with a 'skey' argument that doesn't point to a number: %q, %q", starget, skey) end
+				utils.formatError("Camera:init() called with an 'skey' argument that doesn't point to a number: %q, %q", starget, skey) end
 		end
 	end
 
 	if otarget then
-		if not utils.isVector(otarget) and type(otarget) ~= "table" then
-			utils.formatError("Camera:init() called with a 'otarget' key that isn't a vector or table: %q", otarget) end
+		if not utils.isVector(otarget) and not world.isPointer(otarget) and type(otarget) ~= "table" then
+			utils.formatError("Camera:init() called with an 'otarget' key that isn't a vector, pointer or table: %q", otarget) end
 
 		if not utils.isVector(otarget) then
 			okey = utils.checkArg("okey", params[12] or params.okey, "string", "Camera:init")
 
 			if not utils.isVector(otarget[okey]) then
-				utils.formatError("Camera:init() called with a 'okey' argument that doesn't point to a vector: %q, %q", otarget, okey) end
+				utils.formatError("Camera:init() called with an 'okey' argument that doesn't point to a vector: %q, %q", otarget, okey) end
 		end
 	end
 
@@ -437,7 +437,7 @@ function Camera:setOTarget(otarget, okey, jump)
 	local pos = otarget[okey]
 
 	if not utils.isVector(pos) then
-		utils.formatError("Camera:setOTarget() called with a 'okey' argument that doesn't point to a vector: %q, %q", otarget, okey)
+		utils.formatError("Camera:setOTarget() called with an 'okey' argument that doesn't point to a vector: %q, %q", otarget, okey)
 	end
 
 	if jump then self.pos = pos.xy end

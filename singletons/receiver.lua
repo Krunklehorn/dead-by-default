@@ -1,15 +1,11 @@
 local receiver = {
-	mdelta = nil,
-	curr = nil,
-	prev = nil,
+	mdelta = vec2(),
+	curr = {},
+	prev = {},
 	mouseToKey = { "mouse1", "mouse2", "mouse3", "mouse4", "mouse5" }
 }
 
 function receiver.init()
-	receiver.mdelta = vec2.new()
-	receiver.curr = {}
-	receiver.prev = {}
-
 	for _, func in ipairs({ "mousepressed", "mousereleased", "mousemoved", "keypressed", "keyreleased" }) do
 		if love[func] then
 			local old = love[func]
@@ -26,7 +22,7 @@ end
 
 function receiver.step()
 	receiver.prev = utils.copy(receiver.curr)
-	receiver.mdelta = vec2.new()
+	receiver.mdelta = vec2()
 end
 
 function receiver.mousepressed(x, y, button) receiver.curr[receiver.mouseToKey[button]] = true end

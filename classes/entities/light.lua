@@ -33,7 +33,7 @@ function Light:__call(params)
 	range = range or UNIT_TILE
 	radius = radius or 6
 
-	return Light.new(pos, vel, color, intensity, range, radius)
+	return Light.new(utils.newID(), pos, vel, color, intensity, range, radius)
 end
 
 function Light:__index(key)

@@ -27,7 +27,7 @@ function CircleBrush:__call(params)
 	height = height or 0
 	color = color or "white"
 
-	return CircleBrush.new("circle", pos, vel, radius, height, color)
+	return CircleBrush.new(utils.newID(), pos, vel, radius, height, color)
 end
 
 function CircleBrush:__index(key)

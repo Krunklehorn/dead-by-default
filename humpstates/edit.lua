@@ -61,6 +61,9 @@ end
 
 function editState:leave(to)
 	self:deselect()
+	utils.clear(self.history)
+	self.cursor = 1
+	self.roll = 0
 end
 
 function editState:update(tl)

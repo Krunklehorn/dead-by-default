@@ -42,13 +42,13 @@ function BoxTrigger:__call(params)
 	local onOverlap = utils.checkArg("onOverlap", params[8] or params.onOverlap, "function", "Trigger:__call", true)
 
 	if forward and (right or angle) or (right and angle) then
-		utils.formatError("BoxTrigger:init() can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
+		utils.formatError("BoxTrigger constructor can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
 
 	if not hwidth and not hlength then
-		utils.formatError("BoxTrigger:__call() cannot be called without an 'hwidth' or 'hlength' argument: %q, %q", hwidth, hlength) end
+		utils.formatError("BoxTrigger constructor cannot be called without an 'hwidth' or 'hlength' argument: %q, %q", hwidth, hlength) end
 
-	pos = pos or vec2.new()
-	vel = vel or vec2.new()
+	pos = pos or vec2()
+	vel = vel or vec2()
 	radius = radius or 0
 	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(forward.x, -forward.y)) or 0
 	hwidth = hwidth or hlength
@@ -56,7 +56,7 @@ function BoxTrigger:__call(params)
 	height = height or 0
 	onOverlap = onOverlap or nil
 
-	return BoxTrigger.new("box", pos, vel, radius, angle, hwidth, hlength, height, onOverlap)
+	return BoxTrigger.new(utils.newID(), pos, vel, radius, angle, hwidth, hlength, height, onOverlap)
 end
 
 function BoxTrigger:__gc()

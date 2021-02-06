@@ -2,6 +2,7 @@ local ffi = require "ffi"
 
 ffi.cdef[[
 	typedef struct _Entity {
+		unsigned int id;
 		vec3 pos;
 	} Entity;
 ]]

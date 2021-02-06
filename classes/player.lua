@@ -2,12 +2,12 @@ Player = class("Player")
 
 function Player:init(params)
 	local binds = utils.checkArg("binds", params[1] or params.binds, "table", "Player:init", true)
-	local agentHndl = utils.checkArg("agentHndl", params[2] or params.agentHndl, "handle", "Player:init", true)
-	local agentIndx = utils.checkArg("agentIndx", params[3] or params.agentIndx, "number", "Player:init", true)
+	local agentPtr = utils.checkArg("agentPtr", params[2] or params.agentPtr, "handle", "Player:init", true)
+	local agentId = utils.checkArg("agentId", params[3] or params.agentId, "number", "Player:init", true)
 
 	self.binds = binds or {}
-	self.agentHndl = agentHndl or nil
-	self.agentIndx = agentIndx or nil
+	self.agentPtr = agentPtr or nil
+	self.agentId = agentId or nil
 end
 
 function Player:clone()
@@ -17,8 +17,8 @@ function Player:clone()
 	return self.class:register({
 		class = Player,
 		binds = self.binds,
-		agentHndl = self.agentHndl,
-		agentIndx = self.agentIndx
+		agentPtr = self.agentPtr,
+		agentId = self.agentId
 	})
 end
 

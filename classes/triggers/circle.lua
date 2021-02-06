@@ -36,13 +36,13 @@ function CircleTrigger:__call(params)
 	local height = utils.checkArg("height", params[4] or params.height, "number", "CircleTrigger:__call", true)
 	local onOverlap = utils.checkArg("onOverlap", params[5] or params.onOverlap, "function", "Trigger:__call", true)
 
-	pos = pos or vec2.new()
-	vel = vel or vec2.new()
+	pos = pos or vec2()
+	vel = vel or vec2()
 	radius = radius or 0
 	height = height or 0
 	onOverlap = onOverlap or nil
 
-	return CircleTrigger.new("circle", pos, vel, radius, height, onOverlap)
+	return CircleTrigger.new(utils.newID(), pos, vel, radius, height, onOverlap)
 end
 
 function CircleTrigger:__gc()

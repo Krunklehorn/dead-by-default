@@ -23,12 +23,12 @@ function LineCollider:__call(params)
 	local vel = utils.checkArg("vel", params[3] or params.vel, "vec2", "LineCollider:__call", true)
 	local radius = utils.checkArg("radius", params[4] or params.radius, "number", "LineCollider:__call", true)
 
-	p1 = p1 or vec2.new()
-	p2 = p2 or vec2.new()
-	vel = vel or vec2.new()
+	p1 = p1 or vec2()
+	p2 = p2 or vec2()
+	vel = vel or vec2()
 	radius = radius or 0
 
-	return LineCollider.new("line", p1, p2, vel, radius)
+	return LineCollider.new(utils.newID(), p1, p2, vel, radius)
 end
 
 function LineCollider:__index(key)
