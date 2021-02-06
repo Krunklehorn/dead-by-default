@@ -272,9 +272,9 @@ function _base.checkSet(obj, key, value, query, nillable, copy)
 			end
 
 			copy = true
-		elseif query == "handle" then
-			if not ring.isHandle(value) then
-				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a handle: %q", key, class, value)
+		elseif query == "pointer" then
+			if not world.isPointer(value) then
+				utils.formatError("Attempted to set '%s' key of class '%s' to a value that isn't a pointer: %q", key, class, value)
 			end
 		elseif query == "asset" then
 			if type(value) ~= "string" and type(value) ~= "table" and type(value) ~= "userdata" then

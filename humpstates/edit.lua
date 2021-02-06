@@ -139,11 +139,11 @@ function editState:mousepressed(x, y, button)
 
 			height = height and height + 16 or 128
 
-			if self.activeTool == "circle" then obj = world.addBrush(CircleBrush, { pos = mwpos, radius = 25, height = height })
-			elseif self.activeTool == "box" then obj = world.addBrush(BoxBrush, { pos = mwpos, hwidth = 25, height = height})
-			elseif self.activeTool == "line" then obj = world.addBrush(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height})
-			elseif self.activeTool == "light" then obj = world.addEntity(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = 25 })
-			elseif self.activeTool == "vault" then obj = world.addEntity(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
+			if self.activeTool == "circle" then obj = world.addObject(CircleBrush, { pos = mwpos, radius = 25, height = height })
+			elseif self.activeTool == "box" then obj = world.addObject(BoxBrush, { pos = mwpos, hwidth = 25, height = height})
+			elseif self.activeTool == "line" then obj = world.addObject(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height})
+			elseif self.activeTool == "light" then obj = world.addObject(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = 25 })
+			elseif self.activeTool == "vault" then obj = world.addObject(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
 
 			self:record("add", obj)
 			self.toolState = { type = self.activeTool, obj = obj  }
@@ -436,11 +436,8 @@ function editState:delete(obj)
 	utils.checkArg("obj", obj, "indexable", "editState:delete", true)
 
 	if obj then
-		if Brush.isBrush(obj) then
-			world.removeBrush(obj)
-			self:deselect(obj)
-		elseif Entity.isEntity(obj) then
-			world.removeEntity(obj)
+		if Brush.isBrush(obj) or Entity.isEntity(obj) then
+			world.removeObject(obj)
 			self:deselect(obj)
 		else
 			for o = 1, #obj do
@@ -486,7 +483,7 @@ function editState:undo()
 		if action == "add" then
 			self:delete(obj)
 		elseif action == "delete" then
-			world.insert(obj)
+			world.insertObject(obj)
 		elseif action == "modify" then
 			obj[history.key] = history.old
 		end
@@ -502,7 +499,7 @@ function editState:redo()
 		local obj = history.obj
 
 		if action == "add" then
-			world.insert(obj)
+			world.insertObject(obj)
 		elseif action == "delete" then
 			self:delete(obj)
 		elseif action == "modify" then

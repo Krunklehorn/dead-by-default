@@ -203,7 +203,7 @@ function stache.play(sound, amplitude, pitch, ampRange, pitRange)
 	utils.checkArg("ampRange", ampRange, "number", "stache.play", true)
 	utils.checkArg("pitRange", pitRange, "number", "stache.play", true)
 
-	if ring.roll > 0 then
+	if world.roll > 0 then
 		return end
 
 	amplitude = amplitude or 100

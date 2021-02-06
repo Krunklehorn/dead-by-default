@@ -57,7 +57,7 @@ function input.init()
 end
 
 function input.translate(tl)
-	local commands = world.commands[ring.curr()]
+	local commands = world.commands[world.curr()]
 
 	for i, v in ipairs(commands) do -- TODO: sloppy, make this an ffi struct when Agent becomes one
 		commands[i] = nil end

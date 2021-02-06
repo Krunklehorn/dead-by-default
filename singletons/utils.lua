@@ -88,8 +88,8 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 				utils.formatError("%s() called with a '%s' argument that isn't an entity: %q", func, key, arg)
 			end
 		elseif query == "handle" then
-			if not ring.isHandle(arg) then
-				utils.formatError("%s() called with a '%s' argument that isn't a handle: %q", func, key, arg)
+			if not world.isPointer(arg) then
+				utils.formatError("%s() called with a '%s' argument that isn't a pointer: %q", func, key, arg)
 			end
 		elseif query == "asset" then
 			if type(arg) ~= "string" and type(arg) ~= "table" and type(arg) ~= "userdata" then

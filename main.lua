@@ -43,11 +43,11 @@ function love.run()
 		end
 
 		if humpstate.current() == playState and DEBUG_ROLLBACK then
-			ring.rollback() end
+			world.rollback() end
 
-		while humpstate.current() == playState and ring.roll > 0 do
+		while humpstate.current() == playState and world.roll > 0 do
 			world.update(stopwatch.ticklength * stopwatch.timescale)
-			ring.step()
+			world.step()
 		end
 
 		if lt then
@@ -68,7 +68,7 @@ function love.run()
 			love.update(stopwatch.ticklength * stopwatch.timescale)
 
 			if humpstate.current() == playState then
-				ring.step() end
+				world.step() end
 
 			accu = accu - stopwatch.ticklength
 

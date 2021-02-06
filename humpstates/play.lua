@@ -4,7 +4,7 @@ playState = {
 }
 
 function playState:init()
-	local agentHndl = ring.handle(world, { "agents", 1 })
+	local agentHndl = world.pointer{ "agents", 1 }
 	input.players.active.agentHndl = agentHndl
 	input.players.active.agentIndx = 1
 
@@ -16,7 +16,7 @@ function playState:init()
 end
 
 function playState:enter(from)
-	local agentHndl = ring.handle(world, { "agents", 1 })
+	local agentHndl = world.pointer{ "agents", 1 }
 
 	utils.fadeIn()
 
@@ -51,7 +51,7 @@ function playState:resume(from)
 	utils.fadeIn()
 
 	lm.setRelativeMode(true)
-	input.players.active.agentHndl = ring.handle(world, { "agents", 1 })
+	input.players.active.agentHndl = world.pointer{ "agents", 1 }
 	input.players.active.agentIndx = 1
 end
 

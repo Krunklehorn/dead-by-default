@@ -17,7 +17,6 @@ stache = require "singletons.stache"
 stopwatch = require "singletons.stopwatch"
 receiver = require "singletons.receiver"
 input = require "singletons.input"
-ring = require "singletons.ring"
 world = require "singletons.world"
 
 class = require "singletons.class"
