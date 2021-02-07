@@ -32,7 +32,7 @@ function editState:init()
 
 	self.grid = editgrid.grid(self.camera, {
 		size = 100,
-		subdivisions = 8,
+		subdivisions = 10,
 		color = { 0.25, 0.25, 0.25 },
 		drawScale = false,
 		xColor = { 0, 1, 1 },
@@ -188,7 +188,8 @@ function editState:mousereleased(x, y, button)
 			for e = 1, #world.entities do
 				local entity = world.entities[e]
 
-				if not entity:instanceOf(Light) and entity:pick(mwpos) <= 0 and (not height or entity.pos.z >= height) then
+				if not entity:instanceOf(Decal) and not entity:instanceOf(Light) and
+				   entity:pick(mwpos) <= 0 and (not height or entity.pos.z >= height) then
 					height = entity.pos.z
 					selection = entity
 				end
@@ -245,10 +246,8 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 			for e = 1, #world.entities do
 				local entity = world.entities[e]
 
-				if entity:instanceOf(Light) or entity:instanceOf(Vault) then
-					if utils.AABBContains(p1, p2, entity.pos) then
-						selection[#selection + 1] = entity end
-				end
+				if utils.AABBContains(p1, p2, entity.pos) then
+					selection[#selection + 1] = entity end
 			end
 
 			self:setSelect(selection)
@@ -532,7 +531,10 @@ function editState:addHandles(obj)
 	elseif Entity.isEntity(obj) then
 		self.handles[#self.handles + 1] = PointHandle(obj, "pos")
 
-		if obj:instanceOf(Light) then
+		if obj:instanceOf(Decal) then
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "bow")
+			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "star")
+		elseif obj:instanceOf(Light) then
 			self.handles[#self.handles + 1] = RadiusHandle(obj, "range")
 		elseif obj:instanceOf(Vault) then
 			self.handles[#self.handles + 1] = VectorHandle(obj, "pos", "bow")

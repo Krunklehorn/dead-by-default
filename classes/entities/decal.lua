@@ -5,7 +5,6 @@ ffi.cdef[[
 		Entity;
 		unsigned int tex;
 		double angle;
-		double scale;
 		double hwidth;
 		double hlength;
 		vec3 color;
@@ -27,13 +26,12 @@ function Decal:__call(params)
 	local pos = utils.checkArg("pos", params[1] or params.pos, "vec3", "Decal:__call", true)
 	local tex = utils.checkArg("tex", params[2] or params.tex, "number/string", "Decal:__call")
 	local angle = utils.checkArg("angle", params[3] or params.angle, "number", "Decal:__call", true)
-	local scale = utils.checkArg("scale", params[4] or params.scale, "number", "Decal:__call", true)
 	local forward = utils.checkArg("forward", params.forward, "vec2", "Decal:__call", true)
 	local right = utils.checkArg("right", params.right, "vec2", "Decal:__call", true)
-	local hwidth = utils.checkArg("hwidth", params[5] or params.hwidth, "number", "Decal:__call", true)
-	local hlength = utils.checkArg("hlength", params[6] or params.hlength, "number", "Decal:__call", true)
-	local color = utils.checkArg("color", params[7] or params.color, "vec3", "Decal:__call", true)
-	local alpha = utils.checkArg("alpha", params[8] or params.alpha, "number", "Decal:__call", true)
+	local hwidth = utils.checkArg("hwidth", params[4] or params.hwidth, "number", "Decal:__call", true)
+	local hlength = utils.checkArg("hlength", params[5] or params.hlength, "number", "Decal:__call", true)
+	local color = utils.checkArg("color", params[6] or params.color, "vec3", "Decal:__call", true)
+	local alpha = utils.checkArg("alpha", params[7] or params.alpha, "number", "Decal:__call", true)
 
 	if forward and (right or angle) or (right and angle) then
 		utils.formatError("Decal constructor can only be called with one 'angle', 'forward' or 'right' argument exclusively: %q, %q, %q", angle, forward, right) end
@@ -69,13 +67,12 @@ function Decal:__call(params)
 
 	pos = pos or vec3()
 	angle = angle or (right and math.atan2(right.y, right.x)) or (forward and math.atan2(forward.x, -forward.y)) or 0
-	scale = scale or 1
 	color = color or vec3(1)
 	alpha = alpha or 1
 
 	Decal.quads[id] = lg.newQuad(0, 0, hwidth * 2, hlength * 2, texture)
 
-	return Decal.new(id, pos, tex, angle, scale, hwidth, hlength, color, alpha)
+	return Decal.new(id, pos, tex, angle, hwidth, hlength, color, alpha)
 end
 
 function Decal:__index(key)
@@ -116,20 +113,10 @@ end
 function Decal:instanceOf(class) return class == Decal end
 function Decal.isDecal(obj) return ffi.istype("Decal", obj) end
 
-function Decal:draw(camera)
-	local texture = Decal.textures[self.tex]
-
-	lg.push("all")
-		lg.translate((-self.pos):split())
-		lg.scale(self.scale)
-		lg.rotate(self.angle)
-		lg.translate((-self.hdims):split())
-		stache.setColor(self.color.table, self.alpha)
-
-		texture:setWrap("repeat", "repeat")
-
-		lg.draw(texture, Decal.quads[self.id])
-	lg.pop()
+function Decal:draw()
+	if humpstate.current() == editState and DEBUG_DRAW and DEBUG_ENTITIES and DEBUG_DECALS then
+		local texture = Decal.textures[self.tex]
+		utils.drawBox(self.pos, self.angle, self.hwidth, self.hlength, 0, "magenta", 0.5) end
 end
 
 function Decal:payload(ptr, index, camera, scale)
@@ -143,7 +130,7 @@ function Decal:payload(ptr, index, camera, scale)
 	ptr[index + 3] = hdims.y
 	ptr[index + 4] = math.cos(angle)
 	ptr[index + 5] = math.sin(angle)
-	ptr[index + 6] = self.radius * scale
+	ptr[index + 6] = self.tex
 end
 
 function Decal:pick(point)

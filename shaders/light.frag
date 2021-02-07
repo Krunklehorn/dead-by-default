@@ -45,26 +45,14 @@ float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radiu
 float sceneDist(vec2 xy) {
 	float sdist = MATH_HUGE;
 
-	for (int i = 0; i < nCircles; i++) {
-		sdist = min(sdist, CircleDist(xy, circles[i].xy,
-										  circles[i].z));
-	}
+	for (int i = 0; i < nCircles; i++)
+		sdist = min(sdist, CircleDist(xy, circles[i].xy, circles[i].z));
 
-	for (int i = 0; i < nBoxes; i += 2) {
-		sdist = min(sdist, BoxDist(xy, boxes[i].xy,
-									   boxes[i].zw,
-									   boxes[i + 1].x,
-									   boxes[i + 1].y,
-									   boxes[i + 1].z));
-	}
+	for (int i = 0; i < nBoxes; i += 2)
+		sdist = min(sdist, BoxDist(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
 
-	for (int i = 0; i < nLines; i += 2) {
-		sdist = min(sdist, LineDist(xy, lines[i].xy,
-										lines[i].z,
-										lines[i].w,
-										lines[i + 1].x,
-										lines[i + 1].y));
-	}
+	for (int i = 0; i < nLines; i += 2)
+		sdist = min(sdist, LineDist(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
 
 	return sdist;
 }
@@ -159,7 +147,7 @@ vec4 alphaToLuminance(vec4 color) {
 	else return vec4(0);
 }
 
-float visibility(vec2 xy, vec2 pos)
+float visibility(vec2 xy, vec2 pos, float radius)
 {
 	// from light to pixel
 	vec2 delta = xy - pos;
@@ -169,7 +157,7 @@ float visibility(vec2 xy, vec2 pos)
 	if (len < 1) return 1;
 
 	// shadow
-	return shadow(xy, -delta, len, pos, 1);
+	return shadow(xy, -delta, len, pos, radius);
 }
 
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
@@ -193,16 +181,16 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 		if (VISIBILITY) {
 			vec2 center = (vec2(0.5, 0.5) + vec2(0, 0.25)) * love_ScreenSize.xy;
 			vec2 pos = center;
-			float sdist = sceneDist(pos) - 2;
+			float sdist = sceneDist(pos) - 12;
 
 			while (sdist > 1 && pos.y < love_ScreenSize.y) {
 				pos.y += sdist;
-				sdist = sceneDist(pos) - 2;
+				sdist = sceneDist(pos) - 12;
 			}
 
 			pos.y = min(pos.y, love_ScreenSize.y);
 
-			lighting *= clamp(visibility(xy, pos) + visibility(xy, center), 0, 1);
+			lighting *= clamp(visibility(xy, pos, 6) + visibility(xy, center, 6), 0, 1);
 		}
 
 		if (DEBUG_CLIPPING) {

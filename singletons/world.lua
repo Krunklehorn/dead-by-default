@@ -94,7 +94,7 @@ function world.init()
 	world.addObject(Light, { pos = vec3(200, 0, 144), color = vec3(1, 0, 1), intensity = 1 })
 	world.addObject(Light, { pos = vec3(-200, 0, 144), color = vec3(0, 1, 1), intensity = 1 })
 
-	world.addObject(Decal, { pos = vec3(0, 0, 128), tex = "arrowbtn_up_rls", scale = 16 })
+	world.addObject(Decal, { pos = vec3(0, 0, 144), tex = "parallax_floor" })
 end
 
 function world.update(tl)

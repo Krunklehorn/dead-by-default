@@ -67,7 +67,7 @@ function Vault:instanceOf(class) return class == Vault end
 function Vault.isVault(obj) return ffi.istype("Vault", obj) end
 
 function Vault:draw()
-	if DEBUG_DRAW and DEBUG_ENTITIES and DEBUG_VAULTS then
+	if humpstate.current() == editState and DEBUG_DRAW and DEBUG_ENTITIES and DEBUG_VAULTS then
 		utils.drawBox(self.pos, self.angle, self.hwidth, 10, 0, "magenta", 0.5)
 		utils.drawLine(self.pos, self.pos + self.forward * 100, "magenta", 0.5)
 

@@ -48,26 +48,14 @@ float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radiu
 float sceneDist(vec2 xy) {
 	float sdist = MATH_HUGE;
 
-	for (int i = 0; i < nCircles; i++) {
-		sdist = min(sdist, CircleDist(xy, circles[i].xy,
-										  circles[i].z));
-	}
+	for (int i = 0; i < nCircles; i++)
+		sdist = min(sdist, CircleDist(xy, circles[i].xy, circles[i].z));
 
-	for (int i = 0; i < nBoxes; i += 2) {
-		sdist = min(sdist, BoxDist(xy, boxes[i].xy,
-									   boxes[i].zw,
-									   boxes[i + 1].x,
-									   boxes[i + 1].y,
-									   boxes[i + 1].z));
-	}
+	for (int i = 0; i < nBoxes; i += 2)
+		sdist = min(sdist, BoxDist(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
 
-	for (int i = 0; i < nLines; i += 2) {
-		sdist = min(sdist, LineDist(xy, lines[i].xy,
-										lines[i].z,
-										lines[i].w,
-										lines[i + 1].x,
-										lines[i + 1].y));
-	}
+	for (int i = 0; i < nLines; i += 2)
+		sdist = min(sdist, LineDist(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
 
 	return sdist;
 }
@@ -156,11 +144,11 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 		color.a = mix(0.8, 1, edge);
 	}
 	else if (sdist < edgebias) { // Outside half of the edge
-		color.rgb = mix(front.rgb + lighting.rgb + decals.rgb, color.rgb * depth, edge) + mix(vec3(0), lighting.rgb, edge);
+		color.rgb = mix(front.rgb + lighting.rgb * (decals.rgb + vec3(1)), color.rgb * depth, edge) + mix(vec3(0), lighting.rgb, edge);
 		color.a = mix(front.a, 1, edge);
 	}
 	else { // Outside the shape
-		color.rgb = front.rgb + lighting.rgb + decals.rgb;
+		color.rgb = front.rgb + lighting.rgb * (decals.rgb + vec3(1));
 		color.a = front.a;
 	}
 

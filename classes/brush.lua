@@ -89,10 +89,10 @@ function Brush.batchSDF(brushes, entities)
 					if nLights >= SDF_MAX_LIGHTS then
 						utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %q", nLights) end
 
-					if entity:instanceOf(Decal) then
-						decals[#decals + 1] = entity
-					elseif entity:instanceOf(Light) then
-						if entity.pos.z == brush.height then
+					if entity.pos.z == brush.height then
+						if entity:instanceOf(Decal) then
+							decals[#decals + 1] = entity
+						elseif entity:instanceOf(Light) then
 							entity:payload(lights_floatptr, nLights * 8, camera, scale)
 							nLights = nLights + 1
 						end
@@ -100,13 +100,27 @@ function Brush.batchSDF(brushes, entities)
 				end
 
 				if #decals > 0 then
-					lg.setCanvas{Decal.canvas, depthstencil = SDF_STENCIL}
-					lg.setStencilTest("equal", 0)
+					if humpstate.current() == editState then
+						lg.setCanvas(Decal.canvas)
+					else
+						lg.setCanvas{Decal.canvas, depthstencil = SDF_STENCIL}
+						lg.setStencilTest("equal", 0)
+					end
+
+					lg.setShader()
 					lg.setBlendMode("alpha")
-					lg.clear(true, false, false)
 
 					for d = 1, #decals do
-						decals[d]:draw(camera) end
+						local decal = decals[d]
+						local texture = Decal.textures[decal.tex]
+						local cx, cy = texture:getWidth() / 2, texture:getHeight() / 2
+
+						lg.push("all")
+							stache.setColor(decal.color.table, decal.alpha)
+							texture:setWrap("repeat", "repeat")
+							lg.draw(texture, Decal.quads[decal.id], decal.pos.x, decal.pos.y, decal.angle, decal.hwidth / cx, decal.hlength / cy, cx, cy)
+						lg.pop()
+					end
 				end
 
 				lg.setBlendMode("replace")
@@ -180,6 +194,7 @@ function Brush.batchSDF(brushes, entities)
 				end
 
 				SDF_BACK, SDF_FRONT = SDF_FRONT, SDF_BACK
+				Decal.canvas:renderTo(lg.clear)
 				SDF_LIGHT:renderTo(lg.clear)
 			end
 		end

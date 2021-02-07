@@ -55,7 +55,7 @@ function Light:instanceOf(class) return class == Light end
 function Light.isLight(obj) return ffi.istype("Light", obj) end
 
 function Light:draw()
-	if DEBUG_DRAW and DEBUG_ENTITIES and DEBUG_LIGHTS then
+	if humpstate.current() == editState and DEBUG_DRAW and DEBUG_ENTITIES and DEBUG_LIGHTS then
 		utils.drawCircle(self.pos.xy, self.range, "magenta", 0.25)
 		utils.drawCircle(self.pos.xy, self.radius, "magenta", 0.5)
 	end
