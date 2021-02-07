@@ -66,7 +66,7 @@ function world.init()
 										   hlength = lmth.random(25, 100),
 										   height = height })
 			elseif type == 3 then
-				local c = randVec(UNIT_TILE) - vec2(200)
+				local c = randVec(UNIT_TILE) - vec2(400)
 				local o1 = vec2(lmth.random(0, 400), lmth.random(0, 400))
 				local o2 = vec2(lmth.random(0, 400), lmth.random(0, 400))
 				local d = c.normalized * (UNIT_TILE - c.length) * 0.5

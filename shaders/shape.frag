@@ -15,31 +15,6 @@ uniform Image lighting;
 uniform Image decals;
 uniform float height;
 
-/*
-struct Circle {
-	vec3 pos_radius;
-};
-
-struct Box {
-	vec4 pos_hdims;
-	vec3 cosa_sina_radius;
-};
-
-struct Line {
-	vec4 pos_delta;
-	vec2 length2_radius;
-};
-
-struct Light {
-	vec4 pos_range_radius;
-	vec4 color;
-};
-*/
-
-//uniform Circle circles[SDF_MAX_BRUSHES];
-//uniform Box boxes[SDF_MAX_BRUSHES];
-//uniform Line lines[SDF_MAX_BRUSHES];
-//uniform Light lights[SDF_MAX_LIGHTS];
 uniform vec4 circles[SDF_MAX_BRUSHES];
 uniform vec4 boxes[SDF_MAX_BRUSHES * 2];
 uniform vec4 lines[SDF_MAX_BRUSHES * 2];
@@ -59,16 +34,15 @@ float CircleDist(vec2 xy, vec2 pos, float radius) {
 float BoxDist(vec2 xy, vec2 pos, vec2 hdims, float cosa, float sina, float radius) {
 	vec2 offset = CCW((pos - xy), cosa, sina);
 	vec2 delta = abs(offset) - hdims;
-	vec2 clip = max(delta, 0);
 
-	return length(clip) + min(max(delta.x, delta.y), 0) - radius;
+	return length(max(delta, 0)) + min(max(delta.x, delta.y), 0) - radius;
 }
 
-float LineDist(vec2 xy, vec2 pos, vec2 delta, float length2, float radius) {
-	float scalar = dot(delta, -(pos - xy)) / length2;
-	vec2 clamped = pos + delta * clamp(scalar, 0, 1);
+float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radius) {
+	vec2 offset = CCW((xy - pos), cosa, sina);
+	offset.x -= clamp(offset.x, 0, len);
 
-	return length(clamped - xy) - radius;
+	return length(offset) - radius;
 }
 
 float sceneDist(vec2 xy) {
@@ -77,34 +51,22 @@ float sceneDist(vec2 xy) {
 	for (int i = 0; i < nCircles; i++) {
 		sdist = min(sdist, CircleDist(xy, circles[i].xy,
 										  circles[i].z));
-		/*sdist = min(sdist, CircleDist(xy, circles[i].pos_radius.xy,
-										  circles[i].pos_radius.z));*/
 	}
 
-	//for (int i = 0; i < nBoxes; i++) {
 	for (int i = 0; i < nBoxes; i += 2) {
 		sdist = min(sdist, BoxDist(xy, boxes[i].xy,
 									   boxes[i].zw,
 									   boxes[i + 1].x,
 									   boxes[i + 1].y,
 									   boxes[i + 1].z));
-		/*sdist = min(sdist, BoxDist(xy, boxes[i].pos_hdims.xy,
-										 boxes[i].pos_hdims.zw,
-										 boxes[i].cosa_sina_radius.x,
-										 boxes[i].cosa_sina_radius.y,
-										 boxes[i].cosa_sina_radius.z));*/
 	}
 
-	//for (int i = 0; i < nLines; i++) {
 	for (int i = 0; i < nLines; i += 2) {
 		sdist = min(sdist, LineDist(xy, lines[i].xy,
-										lines[i].zw,
+										lines[i].z,
+										lines[i].w,
 										lines[i + 1].x,
 										lines[i + 1].y));
-		/*sdist = min(sdist, LineDist(xy, lines[i].pos_delta.xy,
-										lines[i].pos_delta.zw,
-										lines[i].length2_radius.x,
-										lines[i].length2_radius.y));*/
 	}
 
 	return sdist;

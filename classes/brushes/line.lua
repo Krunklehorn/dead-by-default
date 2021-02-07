@@ -58,13 +58,14 @@ function LineBrush:instanceOf(class) return class == LineBrush end
 
 function LineBrush:payload(ptr, index, camera, scale)
 	local pos = camera:toScreen(self.p1)
-	local delta = self.delta:scaled(scale):rotated(-camera.angle)
+	local delta = self.delta
+	local angle = -(delta.angle - camera.angle)
 
 	ptr[index + 0] = pos.x
 	ptr[index + 1] = pos.y
-	ptr[index + 2] = delta.x
-	ptr[index + 3] = delta.y
-	ptr[index + 4] = delta.x * delta.x + delta.y * delta.y
+	ptr[index + 2] = math.cos(angle)
+	ptr[index + 3] = math.sin(angle)
+	ptr[index + 4] = delta.length * scale
 	ptr[index + 5] = self.radius * scale
 end
 

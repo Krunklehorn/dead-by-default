@@ -145,7 +145,7 @@ function editState:mousepressed(x, y, button)
 			if self.activeTool == "circle" then obj = world.addObject(CircleBrush, { pos = mwpos, radius = 25, height = height })
 			elseif self.activeTool == "box" then obj = world.addObject(BoxBrush, { pos = mwpos, hwidth = 25, height = height})
 			elseif self.activeTool == "line" then obj = world.addObject(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height})
-			elseif self.activeTool == "light" then obj = world.addObject(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = 25 })
+			elseif self.activeTool == "light" then obj = world.addObject(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = UNIT_TILE / 2 })
 			elseif self.activeTool == "vault" then obj = world.addObject(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
 
 			self:record("add", obj)
@@ -255,7 +255,7 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 		elseif toolType == "circle" then self.toolState.obj.radius = math.max(delta.length, 25)
 		elseif toolType == "box" then self.toolState.obj.star = delta
 		elseif toolType == "line" then self.toolState.obj.p2 = self.pmwpos + delta
-		elseif toolType == "light" then self.toolState.obj.range = math.max(delta.length, 25)
+		elseif toolType == "light" then self.toolState.obj.range = math.max(delta.length, UNIT_TILE / 2)
 		elseif toolType == "vault" then self.toolState.obj.bow = delta end
 	elseif onlyDownPrimary() and self.pmspos then
 		local mspos = vec2(lm.getPosition())

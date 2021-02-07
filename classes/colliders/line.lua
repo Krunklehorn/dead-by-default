@@ -70,11 +70,13 @@ function LineCollider:draw(color, scale)
 			stache.setColor(color)
 			shader:send("LINE_WIDTH", LINE_WIDTH)
 
-			local delta = self.delta:scaled(camera:getNormalizedScale()):rotated(-camera.angle)
+			local delta = self.delta
+			local angle = -(delta.angle - camera.angle)
 
 			shader:send("pos", camera:toScreen(self.p1).table)
-			shader:send("delta", delta.table)
-			shader:send("length2", delta.x * delta.x + delta.y * delta.y)
+			shader:send("cosa", math.cos(angle))
+			shader:send("sina", math.sin(angle))
+			shader:send("len", delta.length * scale * camera:getNormalizedScale())
 			shader:send("radius", self.radius * scale * camera:getNormalizedScale())
 
 			lg.draw(SDF_UNITPLANE)
@@ -95,25 +97,14 @@ function LineCollider:pick(point)
 	utils.checkArg("point", point, "vec2", "LineCollider:pick")
 
 	local offset = point - self.p1
-	local scalar = self.delta:dot(offset) / self.delta.length2
 
-	if scalar <= 0 then
-		if offset.eqZero then
-			return 0 end
+	if offset.eqZero or (point - self.p2).eqZero then
+		return 0 end
 
-		clmpdist = offset.length
-	elseif scalar >= 1 then
-		offset = point - self.p2
+	offset = offset:rotated(-self.delta.angle)
+	offset.x = offset.x - utils.clamp(offset.x, 0, self.delta.length);
 
-		if offset.eqZero then
-			return 0 end
-
-		clmpdist = offset.length
-	else
-		clmpdist = (point - (self.p1 + self.delta * scalar)).length
-	end
-
-	return clmpdist - self.radius
+	return offset.length - self.radius
 end
 
 function LineCollider:overlap(other)

@@ -3,15 +3,20 @@
 uniform float LINE_WIDTH = 1;
 
 uniform vec2 pos;
-uniform vec2 delta;
-uniform float length2;
+uniform float cosa;
+uniform float sina;
+uniform float len;
 uniform float radius;
 
+vec2 CCW(vec2 v, float c, float s) {
+	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
+
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
-	vec2 offset = pos - xy;
-	float scalar = dot(delta, -offset) / length2;
-	vec2 clamped = pos + delta * clamp(scalar, 0, 1);
-	float sdist = length(clamped - xy) - radius;
+	vec2 offset = CCW((xy - pos), cosa, sina);
+	float sdist;
+
+	offset.x -= clamp(offset.x, 0, len);
+	sdist = length(offset) - radius;
 
 	if (sdist - LINE_WIDTH - 0.5 <= 0) {
 		float alpha = 1 + (LINE_WIDTH - 1 - abs(sdist)) / 1.5;
