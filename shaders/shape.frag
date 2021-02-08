@@ -27,15 +27,37 @@ uniform int nLines;
 vec2 CCW(vec2 v, float c, float s) {
 	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
 
+vec2 CW(vec2 v, float c, float s) {
+	return vec2(v.x * c + v.y * s, v.y * c - v.x * s); }
+
 float CircleDist(vec2 xy, vec2 pos, float radius) {
-	return length(pos - xy) - radius;
+	return length(xy - pos) - radius;
+}
+
+vec3 CircleGrad(vec2 xy, vec2 pos, float radius) {
+	vec2 delta = xy - pos;
+	float dist = length(delta);
+
+	return vec3(dist - radius, delta / dist);
 }
 
 float BoxDist(vec2 xy, vec2 pos, vec2 hdims, float cosa, float sina, float radius) {
-	vec2 offset = CCW((pos - xy), cosa, sina);
+	vec2 offset = CCW((xy - pos), cosa, sina);
 	vec2 delta = abs(offset) - hdims;
+	vec2 clip = max(delta, 0);
 
-	return length(max(delta, 0)) + min(max(delta.x, delta.y), 0) - radius;
+	return length(clip) + min(max(delta.x, delta.y), 0) - radius;
+}
+
+vec3 BoxGrad(vec2 xy, vec2 pos, vec2 hdims, float cosa, float sina, float radius) {
+	vec2 offset = CCW((xy - pos), cosa, sina);
+	vec2 delta = abs(offset) - hdims;
+	vec2 osign = vec2(offset.x < 0 ? -1 : 1, offset.y < 0 ? -1 : 1);
+	float greater = max(delta.x, delta.y);
+	vec2 clip = max(delta, 0);
+	float cdist = length(clip);
+
+	return vec3((greater > 0) ? cdist : greater, osign * ((greater > 0) ? clip / cdist : ((delta.x > delta.y) ? vec2(1, 0) : vec2(0, 1))));
 }
 
 float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radius) {
@@ -45,17 +67,20 @@ float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radiu
 	return length(offset) - radius;
 }
 
+vec3 LineGrad(vec2 xy, vec2 pos, float cosa, float sina, float len, float radius) {
+	vec2 offset = CCW((xy - pos), cosa, sina);
+	offset.x -= clamp(offset.x, 0, len);
+	float dist = length(offset);
+
+	return vec3(dist - radius, CW(offset / dist, cosa, sina));
+}
+
 float sceneDist(vec2 xy) {
 	float sdist = MATH_HUGE;
 
-	for (int i = 0; i < nCircles; i++)
-		sdist = min(sdist, CircleDist(xy, circles[i].xy, circles[i].z));
-
-	for (int i = 0; i < nBoxes; i += 2)
-		sdist = min(sdist, BoxDist(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
-
-	for (int i = 0; i < nLines; i += 2)
-		sdist = min(sdist, LineDist(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
+	for (int i = 0; i < nCircles; i++) sdist = min(sdist, CircleDist(xy, circles[i].xy, circles[i].z));
+	for (int i = 0; i < nBoxes; i += 2) sdist = min(sdist, BoxDist(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
+	for (int i = 0; i < nLines; i += 2) sdist = min(sdist, LineDist(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
 
 	return sdist;
 }

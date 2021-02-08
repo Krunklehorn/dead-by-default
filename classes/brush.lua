@@ -57,7 +57,7 @@ function Brush.batchSDF(brushes, entities)
 	lg.push("all")
 		if humpstate.current() ~= editState then
 			lg.setCanvas{SDF_LIGHT, depthstencil = SDF_STENCIL}
-			lg.stencil(stencilFunc, "replace", 1)
+			--lg.stencil(stencilFunc, "replace", 1)
 		end
 
 		local nCircles, nBoxes, nLines, nLights = 0, 0, 0, 0
@@ -139,6 +139,7 @@ function Brush.batchSDF(brushes, entities)
 					utils.send(lightShader, "LUMINANCE", LUMINANCE)
 					utils.send(lightShader, "VISIBILITY", humpstate.current() ~= editState and VISIBILITY or false)
 					utils.send(lightShader, "DEBUG_CLIPPING", DEBUG_DRAW and DEBUG_CLIPPING)
+					utils.send(lightShader, "scale", scale)
 
 					if nCircles > 0 then lightShader:send("circles", circles_data, 0, nCircles * 4 * 4) end
 					if nBoxes > 0 then lightShader:send("boxes", boxes_data, 0, nBoxes * 4 * 8) end

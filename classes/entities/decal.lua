@@ -70,7 +70,7 @@ function Decal:__call(params)
 	color = color or vec3(1)
 	alpha = alpha or 1
 
-	Decal.quads[id] = lg.newQuad(0, 0, hwidth * 2, hlength * 2, texture)
+	Decal.quads[id] = lg.newQuad(0, 0, texture:getWidth(), texture:getHeight(), texture)
 
 	return Decal.new(id, pos, tex, angle, hwidth, hlength, color, alpha)
 end

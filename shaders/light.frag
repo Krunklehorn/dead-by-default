@@ -10,6 +10,8 @@ uniform bool LUMINANCE = true;
 uniform bool VISIBILITY = true;
 uniform bool DEBUG_CLIPPING = false;
 
+uniform float scale;
+
 uniform vec4 circles[SDF_MAX_BRUSHES];
 uniform vec4 boxes[SDF_MAX_BRUSHES * 2];
 uniform vec4 lines[SDF_MAX_BRUSHES * 2];
@@ -23,16 +25,37 @@ uniform int nLights;
 vec2 CCW(vec2 v, float c, float s) {
 	return vec2(v.x * c - v.y * s, v.y * c + v.x * s); }
 
+vec2 CW(vec2 v, float c, float s) {
+	return vec2(v.x * c + v.y * s, v.y * c - v.x * s); }
+
 float CircleDist(vec2 xy, vec2 pos, float radius) {
-	return length(pos - xy) - radius;
+	return length(xy - pos) - radius;
+}
+
+vec3 CircleGrad(vec2 xy, vec2 pos, float radius) {
+	vec2 delta = xy - pos;
+	float dist = length(delta);
+
+	return vec3(dist - radius, delta / dist);
 }
 
 float BoxDist(vec2 xy, vec2 pos, vec2 hdims, float cosa, float sina, float radius) {
-	vec2 offset = CCW((pos - xy), cosa, sina);
+	vec2 offset = CCW((xy - pos), cosa, sina);
 	vec2 delta = abs(offset) - hdims;
 	vec2 clip = max(delta, 0);
 
 	return length(clip) + min(max(delta.x, delta.y), 0) - radius;
+}
+
+vec3 BoxGrad(vec2 xy, vec2 pos, vec2 hdims, float cosa, float sina, float radius) {
+	vec2 offset = CCW((xy - pos), cosa, sina);
+	vec2 delta = abs(offset) - hdims;
+	vec2 osign = vec2(offset.x < 0 ? -1 : 1, offset.y < 0 ? -1 : 1);
+	float greater = max(delta.x, delta.y);
+	vec2 clip = max(delta, 0);
+	float cdist = length(clip);
+
+	return vec3((greater > 0) ? cdist : greater, osign * ((greater > 0) ? clip / cdist : ((delta.x > delta.y) ? vec2(1, 0) : vec2(0, 1))));
 }
 
 float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radius) {
@@ -42,19 +65,36 @@ float LineDist(vec2 xy, vec2 pos, float cosa, float sina, float len, float radiu
 	return length(offset) - radius;
 }
 
+vec3 LineGrad(vec2 xy, vec2 pos, float cosa, float sina, float len, float radius) {
+	vec2 offset = CCW((xy - pos), cosa, sina);
+	offset.x -= clamp(offset.x, 0, len);
+	float dist = length(offset);
+
+	return vec3(dist - radius, CW(offset / dist, cosa, sina));
+}
+
+vec3 GradMin(vec3 v1, vec3 v2) {
+	return v1.x <= v1.y ? v1 : v2;
+}
+
 float sceneDist(vec2 xy) {
 	float sdist = MATH_HUGE;
 
-	for (int i = 0; i < nCircles; i++)
-		sdist = min(sdist, CircleDist(xy, circles[i].xy, circles[i].z));
-
-	for (int i = 0; i < nBoxes; i += 2)
-		sdist = min(sdist, BoxDist(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
-
-	for (int i = 0; i < nLines; i += 2)
-		sdist = min(sdist, LineDist(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
+	for (int i = 0; i < nCircles; i++) sdist = min(sdist, CircleDist(xy, circles[i].xy, circles[i].z));
+	for (int i = 0; i < nBoxes; i += 2) sdist = min(sdist, BoxDist(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
+	for (int i = 0; i < nLines; i += 2) sdist = min(sdist, LineDist(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
 
 	return sdist;
+}
+
+vec3 sceneGrad(vec2 xy) {
+	vec3 sgrad = vec3(MATH_HUGE, 0, 0);
+
+	for (int i = 0; i < nCircles; i++) sgrad = GradMin(sgrad, CircleGrad(xy, circles[i].xy, circles[i].z));
+	for (int i = 0; i < nBoxes; i += 2) sgrad = GradMin(sgrad, BoxGrad(xy, boxes[i].xy, boxes[i].zw, boxes[i + 1].x, boxes[i + 1].y, boxes[i + 1].z));
+	for (int i = 0; i < nLines; i += 2) sgrad = GradMin(sgrad, LineGrad(xy, lines[i].xy, lines[i].z, lines[i].w, lines[i + 1].x, lines[i + 1].y));
+
+	return sgrad;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -62,16 +102,16 @@ float sceneDist(vec2 xy) {
 // https://www.shadertoy.com/view/4dfXDn
 /////////////////////////////////////////////////////////////////////
 
-float shadow(vec2 xy, vec2 delta, float len, vec2 pos, float radius)
+float shadow(vec2 xy, vec2 dir, float ldist, float radius)
 {
-	// from pixel to light
-	vec2 dir = normalize(delta);
-
 	// fraction of light visible, starts at one radius (second half added in the end);
-	float lf = radius * len;
+	float lf = radius * ldist;
 
 	// distance traveled
 	float dt = 0.01;
+
+	// distance to greatest coverage
+	float dc = ldist;
 
 	for (int i = 0; i < 64; ++i) {
 		// distance to scene at current position
@@ -79,47 +119,81 @@ float shadow(vec2 xy, vec2 delta, float len, vec2 pos, float radius)
 		float sdist = sceneDist(xy + dir * dt) + edgebias;
 
 		// early out when this ray is guaranteed to be full shadow
-		if (sdist < -radius)
-			return 0;
+		if (sdist < -radius) {
+			lf = 0;
+			break;
+		}
 
 		// width of cone-overlap at light
 		// 0 in center, so 50% overlap: add one radius outside of loop to get total coverage
 		// should be '(sdist / dt) * ld', but '*ld' outside of loop
-		lf = min(lf, sdist / dt);
+		float coverage = sdist / dt;
+
+		if (coverage < lf) {
+			lf = coverage;
+			if (sdist <= radius * 2)
+				dc = dt;
+		}
 
 		// move ahead
 		dt += max(1, abs(sdist));
-		if (dt > len) break;
+		if (dt > ldist) break;
 	}
+
+	if (dc < ldist) {
+		// refine the coverage distance, step backwards if necessary
+		for (int i = 0; i < 8; ++i)
+			dc += sceneDist(xy + dir * dc) + edgebias - radius * 2;
+	}
+
+	// distance remaining from greatest coverage point
+	float dr = ldist - dc;
+
+	// hard coded for now
+	float lz = 32 * scale; // TODO: light pos.z
+	float dz = 16 * scale; // TODO: use depth buffer
+
+	// min and max light heights
+	float lz_min = lz - radius;
+	float lz_max = lz + radius;
+
+	// cutoff distances (mirrored)
+	float cd_min = dr * lz_max / (lz_max - dz);
+	float cd_max = dr * lz_min / (lz_min - dz);
+
+	// compare with distance to light
+	float cv = (ldist - cd_min) / (cd_max - cd_min);
+	cv = clamp(cv, 0, 1);
+	cv = smoothstep(0, 1, cv);
 
 	// multiply by ld to get the real projected overlap (moved out of loop)
 	// add one radius, before between -radius and + radius
 	// normalize to 1 ( / 2*radius)
-	lf *= len + radius;
+	lf *= ldist + radius;
 	lf /= 2 * radius;
 	lf = clamp(lf, 0, 1);
 	lf = smoothstep(0, 1, lf);
 
-	return lf;
+	return mix(lf, 1, cv);
 }
 
 vec4 addLight(vec2 xy, vec2 pos, vec4 color, float range, float radius)
 {
-	// from light to pixel
-	vec2 delta = xy - pos;
-	float len = length(delta);
+	// from pixel to light
+	vec2 delta = pos.xy - xy;
+	float ldist = length(delta);
 
 	// out of range
-	if (len > range) return vec4(0);
+	if (ldist > range) return vec4(0);
 
 	// falloff
-	float fall = (range - len) / range;
+	float fall = (range - ldist) / range;
 
 	// center pixel fix
-	if (len < 1) return color;
+	if (ldist < 1) return color;
 
 	// shadow
-	return color * shadow(xy, -delta, len, pos, radius) * (fall * fall);
+	return color * shadow(xy, normalize(delta), ldist, radius) * (fall * fall);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -157,7 +231,7 @@ float visibility(vec2 xy, vec2 pos, float radius)
 	if (len < 1) return 1;
 
 	// shadow
-	return shadow(xy, -delta, len, pos, radius);
+	return shadow(xy, -delta, len, radius);
 }
 
 vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
@@ -171,14 +245,10 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 									 LUMINANCE ? lights[i + 1] : lights[i + 1] * lights[i + 1].a,
 									 lights[i].z,
 									 lights[i].w);
-			/*lighting += addLight(xy, light.pos_range_radius.xy,
-									 LUMINANCE ? light.color : light.color * light.color.a,
-									 light.pos_range_radius.z,
-									 light.pos_range_radius.w);*/
 		}
 
 		if (LUMINANCE) lighting = alphaToLuminance(lighting);
-		if (VISIBILITY) {
+		/*if (VISIBILITY) {
 			vec2 center = (vec2(0.5, 0.5) + vec2(0, 0.25)) * love_ScreenSize.xy;
 			vec2 pos = center;
 			float sdist = sceneDist(pos) - 12;
@@ -191,7 +261,7 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 			pos.y = min(pos.y, love_ScreenSize.y);
 
 			lighting *= clamp(visibility(xy, pos, 6) + visibility(xy, center, 6), 0, 1);
-		}
+		}*/
 
 		if (DEBUG_CLIPPING) {
 			if (lighting.r >= 1 && lighting.g >= 1 && lighting.b >= 1)

@@ -142,9 +142,9 @@ function editState:mousepressed(x, y, button)
 
 			height = height and height + 16 or 128
 
-			if self.activeTool == "circle" then obj = world.addObject(CircleBrush, { pos = mwpos, radius = 25, height = height })
-			elseif self.activeTool == "box" then obj = world.addObject(BoxBrush, { pos = mwpos, hwidth = 25, height = height})
-			elseif self.activeTool == "line" then obj = world.addObject(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 25, height = height})
+			if self.activeTool == "circle" then obj = world.addObject(CircleBrush, { pos = mwpos, radius = 20, height = height })
+			elseif self.activeTool == "box" then obj = world.addObject(BoxBrush, { pos = mwpos, hwidth = 20, height = height})
+			elseif self.activeTool == "line" then obj = world.addObject(LineBrush, { p1 = mwpos, p2 = mwpos, radius = 20, height = height})
 			elseif self.activeTool == "light" then obj = world.addObject(Light, { pos = vec3(mwpos.x, mwpos.y, height), color = vec3(lmth.random(), lmth.random(), lmth.random()), range = UNIT_TILE / 2 })
 			elseif self.activeTool == "vault" then obj = world.addObject(Vault, { pos = vec3(mwpos.x, mwpos.y, height) }) end
 
@@ -251,7 +251,7 @@ function editState:mousemoved(x, y, dx, dy, istouch)
 			end
 
 			self:setSelect(selection)
-		elseif toolType == "circle" then self.toolState.obj.radius = math.max(delta.length, 25)
+		elseif toolType == "circle" then self.toolState.obj.radius = math.max(delta.length, 20)
 		elseif toolType == "box" then self.toolState.obj.star = delta
 		elseif toolType == "line" then self.toolState.obj.p2 = self.pmwpos + delta
 		elseif toolType == "light" then self.toolState.obj.range = math.max(delta.length, UNIT_TILE / 2)

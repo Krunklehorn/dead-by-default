@@ -94,7 +94,10 @@ function world.init()
 	world.addObject(Light, { pos = vec3(200, 0, 144), color = vec3(1, 0, 1), intensity = 1 })
 	world.addObject(Light, { pos = vec3(-200, 0, 144), color = vec3(0, 1, 1), intensity = 1 })
 
-	world.addObject(Decal, { pos = vec3(0, 0, 144), tex = "parallax_floor" })
+	world.addObject(Decal, { pos = vec3(-200, -200, 144), tex = "parallax_floor", hwidth = 200 })
+	world.addObject(Decal, { pos = vec3(200, -200, 144), tex = "parallax_floor", hwidth = 200 })
+	world.addObject(Decal, { pos = vec3(-200, 200, 144), tex = "parallax_floor", hwidth = 200 })
+	world.addObject(Decal, { pos = vec3(200, 200, 144), tex = "parallax_floor", hwidth = 200 })
 end
 
 function world.update(tl)
