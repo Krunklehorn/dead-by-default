@@ -1,9 +1,11 @@
 local ffi = require "ffi"
 
 local world = {
+	ids = {},
 	commands = {},
 	states = {},
 	pointers = setmetatable({}, { __mode = "kv" }),
+	nextID = OBJ_ID_BASE,
 	cursor = 1,
 	roll = 0
 }
@@ -78,9 +80,6 @@ function world.init()
 		end
 	end]]
 
-	--world.load()
-	--world.save()
-
 	world.addObject(BoxTrigger, { hwidth = UNIT_TILE * 2, height = 0, onOverlap = function()
 		local agent = Trigger.agent
 		agent.pos = agent.pos:clamped(-(UNIT_TILE - 100), UNIT_TILE - 100)
@@ -98,6 +97,9 @@ function world.init()
 	world.addObject(Decal, { pos = vec3(200, -200, 144), tex = "parallax_floor", hwidth = 200 })
 	world.addObject(Decal, { pos = vec3(-200, 200, 144), tex = "parallax_floor", hwidth = 200 })
 	world.addObject(Decal, { pos = vec3(200, 200, 144), tex = "parallax_floor", hwidth = 200 })
+
+	--world.load()
+	--world.save()
 end
 
 function world.update(tl)
@@ -116,6 +118,15 @@ function world.draw(rt)
 	Brush.batchSDF(world.brushes, world.entities)
 	utils.drawEach(world.agents)
 	utils.drawEach(world.entities)
+end
+
+function world.newID()
+	world.nextID = world.nextID + 1
+
+	while world.ids[world.nextID] do
+		world.nextID = world.nextID + 1 end
+
+	return world.nextID
 end
 
 function world.getObjectArray(obj)
@@ -143,10 +154,9 @@ function world.insertObject(obj)
 	local array = world.getObjectArray(obj)
 
 	if array then
-		local id = obj.id
+		local id = world.newID()
 
-		if array[id] then
-			utils.formatError("Attempted to insert world object using an ID that conflicts with an existing object: %q, %q, %q", obj, array[id], id) end
+		obj:setID(id)
 
 		if Brush.isBrush(obj) or Trigger.isTrigger(obj) then
 			local i = 1
@@ -159,11 +169,12 @@ function world.insertObject(obj)
 			end
 
 			table.insert(array, i, obj)
-			array[id] = obj
 		elseif Agent.isAgent(obj) or Entity.isEntity(obj) then
 			array[#array + 1] = obj
-			array[id] = obj
 		end
+
+		array[id] = obj
+		world.ids[id] = obj
 	else
 		for o = 1, #obj do
 			world.insertObject(obj[o]) end

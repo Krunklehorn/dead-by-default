@@ -29,7 +29,7 @@ function LineBrush:__call(params)
 	height = height or 0
 	color = color or vec3()
 
-	return LineBrush.new(utils.newID(), p1, p2, vel, radius, height, color)
+	return LineBrush.new(OBJ_ID_BASE, p1, p2, vel, radius, height, color)
 end
 
 function LineBrush:__index(key)
@@ -54,6 +54,7 @@ function LineBrush:__tostring()
 	else return string.format("Instance of 'LineBrush' (%s)", utils.addrString(self)) end
 end
 
+function LineBrush:setID(id) self.id = utils.checkArg("id", id, "ID", "LineBrush:setID") end
 function LineBrush:instanceOf(class) return class == LineBrush end
 
 function LineBrush:payload(ptr, index, camera, scale)

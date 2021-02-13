@@ -83,7 +83,7 @@ function Agent:__call(params)
 	color = color or "cyan"
 	radius = radius or 45
 
-	return Agent.new(utils.newID(), pos, vel, angle, color, { utils.newID(), pos.xy, vel.xy * stopwatch.ticklength, radius }, "air", "upright")
+	return Agent.new(OBJ_ID_BASE, pos, vel, angle, color, { OBJ_ID_BASE, pos.xy, vel.xy * stopwatch.ticklength, radius }, "air", "upright")
 end
 
 function Agent:__index(key)
@@ -100,6 +100,13 @@ end
 function Agent:__tostring()
 	if self == Agent then return string.format("Class 'Agent' (%s)", Agent.string)
 	else return string.format("Instance of 'Agent' (%s)", utils.addrString(self)) end
+end
+
+function Agent:setID(id)
+	utils.checkArg("id", id, "ID", "Agent:setID")
+
+	self.id = id
+	self.collider:setID(id)
 end
 
 function Agent:instanceOf(class) return class == Agent end

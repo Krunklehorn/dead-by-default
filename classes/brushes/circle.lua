@@ -27,7 +27,7 @@ function CircleBrush:__call(params)
 	height = height or 0
 	color = color or vec3()
 
-	return CircleBrush.new(utils.newID(), pos, vel, radius, height, color)
+	return CircleBrush.new(OBJ_ID_BASE, pos, vel, radius, height, color)
 end
 
 function CircleBrush:__index(key)
@@ -48,6 +48,7 @@ function CircleBrush:__tostring()
 	else return string.format("Instance of 'CircleBrush' (%s)", utils.addrString(self)) end
 end
 
+function CircleBrush:setID(id) self.id = utils.checkArg("id", id, "ID", "CircleBrush:setID") end
 function CircleBrush:instanceOf(class) return class == CircleBrush end
 
 function CircleBrush:payload(ptr, index, camera, scale)

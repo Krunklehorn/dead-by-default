@@ -22,7 +22,6 @@ function Decal:__call(params)
 	if Decal.isDecal(self) then
 		utils.formatError("Attempted to create a new instance from an instance: %q", self) end
 
-	local id = utils.newID()
 	local pos = utils.checkArg("pos", params[1] or params.pos, "vec3", "Decal:__call", true)
 	local tex = utils.checkArg("tex", params[2] or params.tex, "number/string", "Decal:__call")
 	local angle = utils.checkArg("angle", params[3] or params.angle, "number", "Decal:__call", true)
@@ -70,9 +69,7 @@ function Decal:__call(params)
 	color = color or vec3(1)
 	alpha = alpha or 1
 
-	Decal.quads[id] = lg.newQuad(0, 0, texture:getWidth(), texture:getHeight(), texture)
-
-	return Decal.new(id, pos, tex, angle, hwidth, hlength, color, alpha)
+	return Decal.new(OBJ_ID_BASE, pos, tex, angle, hwidth, hlength, color, alpha)
 end
 
 function Decal:__index(key)
@@ -108,6 +105,20 @@ end
 function Decal:__tostring()
 	if self == Decal then return string.format("Class 'Decal' (%s)", Decal.string)
 else return string.format("Instance of 'Decal' (%s)", utils.addrString(self)) end
+end
+
+function Decal:setID(id)
+	utils.checkArg("id", id, "ID", "Decal:setID")
+
+	if Decal.quads[self.id] then
+		Decal.quads[id] = Decal.quads[self.id]
+		Decal.quads[self.id] = nil
+	else
+		local texture = Decal.textures[self.tex]
+		Decal.quads[id] = lg.newQuad(0, 0, texture:getWidth(), texture:getHeight(), texture)
+	end
+
+	self.id = id
 end
 
 function Decal:instanceOf(class) return class == Decal end

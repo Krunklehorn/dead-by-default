@@ -56,7 +56,7 @@ function BoxTrigger:__call(params)
 	height = height or 0
 	onOverlap = onOverlap or nil
 
-	return BoxTrigger.new(utils.newID(), pos, vel, radius, angle, hwidth, hlength, height, onOverlap)
+	return BoxTrigger.new(OBJ_ID_BASE, pos, vel, radius, angle, hwidth, hlength, height, onOverlap)
 end
 
 function BoxTrigger:__gc()
@@ -118,6 +118,7 @@ function BoxTrigger:__tostring()
 	else return string.format("Instance of 'BoxTrigger' (%s)", utils.addrString(self)) end
 end
 
+function BoxTrigger:setID(id) self.id = utils.checkArg("id", id, "ID", "BoxTrigger:setID") end
 function BoxTrigger:instanceOf(class) return class == BoxTrigger end
 
 BoxTrigger.update = Trigger.update

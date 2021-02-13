@@ -42,7 +42,7 @@ function CircleTrigger:__call(params)
 	height = height or 0
 	onOverlap = onOverlap or nil
 
-	return CircleTrigger.new(utils.newID(), pos, vel, radius, height, onOverlap)
+	return CircleTrigger.new(OBJ_ID_BASE, pos, vel, radius, height, onOverlap)
 end
 
 function CircleTrigger:__gc()
@@ -83,6 +83,7 @@ function CircleTrigger:__tostring()
 	else return string.format("Instance of 'CircleTrigger' (%s)", utils.addrString(self)) end
 end
 
+function CircleTrigger:setID(id) self.id = utils.checkArg("id", id, "ID", "CircleTrigger:setID") end
 function CircleTrigger:instanceOf(class) return class == CircleTrigger end
 
 CircleTrigger.update = Trigger.update

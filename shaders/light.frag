@@ -1,7 +1,7 @@
 #pragma language glsl3
 
 #define MATH_HUGE 100000
-#define SDF_MAX_BRUSHES 197
+#define SDF_MAX_BRUSHES 100
 #define SDF_MAX_LIGHTS 12
 #define edgebias (LINE_WIDTH + 0.5)
 
@@ -74,7 +74,7 @@ vec3 LineGrad(vec2 xy, vec2 pos, float cosa, float sina, float len, float radius
 }
 
 vec3 GradMin(vec3 v1, vec3 v2) {
-	return v1.x <= v1.y ? v1 : v2;
+	return v1.x < v1.y ? v1 : v2;
 }
 
 float sceneDist(vec2 xy) {
@@ -110,29 +110,29 @@ float shadow(vec2 xy, vec2 dir, float ldist, float radius)
 	// distance traveled
 	float dt = 0.01;
 
-	// distance to greatest coverage
+	// distance to first greatest coverage
 	float dc = ldist;
 
-	for (int i = 0; i < 64; ++i) {
+	for (int i = 0; i < 64; i++) {
 		// distance to scene at current position
 		// edgebias enables a shimmer around borders
 		float sdist = sceneDist(xy + dir * dt) + edgebias;
 
 		// early out when this ray is guaranteed to be full shadow
 		if (sdist < -radius) {
-			lf = 0;
+			lf = sdist / dt;
 			break;
 		}
 
 		// width of cone-overlap at light
 		// 0 in center, so 50% overlap: add one radius outside of loop to get total coverage
-		// should be '(sdist / dt) * ld', but '*ld' outside of loop
+		// should be '(sdist / dt) * ldist', but '*ldist' outside of loop
 		float coverage = sdist / dt;
 
 		if (coverage < lf) {
 			lf = coverage;
-			if (sdist <= radius * 2)
-				dc = dt;
+			if (sdist > -0.01)
+				dc = min(dc, dt);
 		}
 
 		// move ahead
@@ -140,13 +140,14 @@ float shadow(vec2 xy, vec2 dir, float ldist, float radius)
 		if (dt > ldist) break;
 	}
 
-	if (dc < ldist) {
-		// refine the coverage distance, step backwards if necessary
-		for (int i = 0; i < 8; ++i)
-			dc += sceneDist(xy + dir * dc) + edgebias - radius * 2;
-	}
+	// BUG: lf area from close brushes modulates cv area in father brushes, creating a false outline
+	// consider what 50% coverage in both horizontal and vertical domains represents? 25% total? or 75% total?
 
-	// distance remaining from greatest coverage point
+	// refine the distance to first greatest coverage, step backwards if necessary
+	for (int i = 0; i < 8; i++)
+		dc += sceneDist(xy + dir * dc) + edgebias;
+
+	// invert for distance remaining
 	float dr = ldist - dc;
 
 	// hard coded for now
@@ -161,16 +162,15 @@ float shadow(vec2 xy, vec2 dir, float ldist, float radius)
 	float cd_min = dr * lz_max / (lz_max - dz);
 	float cd_max = dr * lz_min / (lz_min - dz);
 
+	cd_min = min(cd_min, cd_max);
+
 	// compare with distance to light
 	float cv = (ldist - cd_min) / (cd_max - cd_min);
 	cv = clamp(cv, 0, 1);
 	cv = smoothstep(0, 1, cv);
 
-	// multiply by ld to get the real projected overlap (moved out of loop)
-	// add one radius, before between -radius and + radius
-	// normalize to 1 ( / 2*radius)
-	lf *= ldist + radius;
-	lf /= 2 * radius;
+	// multiply by ldist, make unipolar, normalize by diameter
+	lf = (lf * ldist + radius) / (2 * radius);
 	lf = clamp(lf, 0, 1);
 	lf = smoothstep(0, 1, lf);
 
@@ -239,7 +239,6 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 
 	// Beyond the inside half of the edge
 	if (sceneDist(xy) >= -edgebias) {
-		//for (int i = 0; i < nLights; i++) {
 		for (int i = 0; i < nLights; i += 2) {
 			lighting += addLight(xy, lights[i].xy,
 									 LUMINANCE ? lights[i + 1] : lights[i + 1] * lights[i + 1].a,
@@ -248,7 +247,7 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 		}
 
 		if (LUMINANCE) lighting = alphaToLuminance(lighting);
-		/*if (VISIBILITY) {
+		if (VISIBILITY) {
 			vec2 center = (vec2(0.5, 0.5) + vec2(0, 0.25)) * love_ScreenSize.xy;
 			vec2 pos = center;
 			float sdist = sceneDist(pos) - 12;
@@ -261,7 +260,7 @@ vec4 effect(vec4 color, Image image, vec2 uv, vec2 xy) {
 			pos.y = min(pos.y, love_ScreenSize.y);
 
 			lighting *= clamp(visibility(xy, pos, 6) + visibility(xy, center, 6), 0, 1);
-		}*/
+		}
 
 		if (DEBUG_CLIPPING) {
 			if (lighting.r >= 1 && lighting.g >= 1 && lighting.b >= 1)

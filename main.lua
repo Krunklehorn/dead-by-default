@@ -124,14 +124,15 @@ function love.resize(w, h)
 	UI_SCALE_FLOORED = math.floor(UI_SCALE)
 	WINDOW_DIMS_VEC2 = vec2(w, h)
 	WINDOW_CENTER_VEC2 = vec2(w / 2, h / 2)
+
 	SDF_STENCIL = lg.newCanvas(w, h, { format = "stencil8" })
+	SDF_DECALS = lg.newCanvas(w, h, { format = "normal" })
 	SDF_LIGHT = lg.newCanvas(w, h, { format = "normal" })
 	SDF_FRONT = lg.newCanvas(w, h, { format = "normal" })
 	SDF_BACK = lg.newCanvas(w, h, { format = "normal" })
 
 	Background.overdraw = math.sqrt((w / h) ^ 2 + 1)
 	Background.canvas = lg.newCanvas()
-	Decal.canvas = lg.newCanvas()
 
 	if not lw.getFullscreen() then
 		local dw, dh = lw.getDesktopDimensions()

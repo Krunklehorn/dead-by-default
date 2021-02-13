@@ -1,7 +1,7 @@
 #pragma language glsl3
 
 #define MATH_HUGE 100000
-#define SDF_MAX_BRUSHES 197
+#define SDF_MAX_BRUSHES 100
 #define SDF_MAX_LIGHTS 12
 #define edgebias (LINE_WIDTH + 0.5)
 

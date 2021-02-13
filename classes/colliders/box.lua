@@ -42,7 +42,7 @@ function BoxCollider:__call(params)
 	hwidth = hwidth or hlength
 	hlength = hlength or hwidth
 
-	return BoxCollider.new(utils.newID(), pos, vel, radius, angle, hwidth, hlength)
+	return BoxCollider.new(OBJ_ID_BASE, pos, vel, radius, angle, hwidth, hlength)
 end
 
 function BoxCollider:__index(key)
@@ -84,6 +84,7 @@ function BoxCollider:__tostring()
 	else return string.format("Instance of 'BoxCollider' (%s)", utils.addrString(self)) end
 end
 
+function BoxCollider:setID(id) self.id = utils.checkArg("id", id, "ID", "BoxCollider:setID") end
 function BoxCollider:instanceOf(class) return class == BoxCollider end
 
 function BoxCollider:draw(color, scale)

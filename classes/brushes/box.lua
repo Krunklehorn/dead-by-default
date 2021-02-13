@@ -41,7 +41,7 @@ function BoxBrush:__call(params)
 	height = height or 0
 	color = color or vec3()
 
-	return BoxBrush.new(utils.newID(), pos, vel, radius, angle, hwidth, hlength, height, color)
+	return BoxBrush.new(OBJ_ID_BASE, pos, vel, radius, angle, hwidth, hlength, height, color)
 end
 
 function BoxBrush:__index(key)
@@ -83,6 +83,7 @@ function BoxBrush:__tostring()
 	else return string.format("Instance of 'BoxBrush' (%s)", utils.addrString(self)) end
 end
 
+function BoxBrush:setID(id) self.id = utils.checkArg("id", id, "ID", "BoxBrush:setID") end
 function BoxBrush:instanceOf(class) return class == BoxBrush end
 
 function BoxBrush:payload(ptr, index, camera, scale)

@@ -33,7 +33,7 @@ function Light:__call(params)
 	range = range or UNIT_TILE
 	radius = radius or 6
 
-	return Light.new(utils.newID(), pos, vel, color, intensity, range, radius)
+	return Light.new(OBJ_ID_BASE, pos, vel, color, intensity, range, radius)
 end
 
 function Light:__index(key)
@@ -51,6 +51,7 @@ function Light:__tostring()
 else return string.format("Instance of 'Light' (%s)", utils.addrString(self)) end
 end
 
+function Light:setID(id) self.id = utils.checkArg("id", id, "ID", "Light:setID") end
 function Light:instanceOf(class) return class == Light end
 function Light.isLight(obj) return ffi.istype("Light", obj) end
 

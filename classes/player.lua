@@ -2,7 +2,7 @@ Player = class("Player")
 
 function Player:init(params)
 	local binds = utils.checkArg("binds", params[1] or params.binds, "table", "Player:init", true)
-	local agentPtr = utils.checkArg("agentPtr", params[2] or params.agentPtr, "handle", "Player:init", true)
+	local agentPtr = utils.checkArg("agentPtr", params[2] or params.agentPtr, "pointer", "Player:init", true)
 	local agentId = utils.checkArg("agentId", params[3] or params.agentId, "number", "Player:init", true)
 
 	self.binds = binds or {}

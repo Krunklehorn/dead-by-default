@@ -4,8 +4,7 @@ local intptr_t = ffi.typeof("intptr_t")
 local intptr_t1 = ffi.typeof("intptr_t[1]")
 
 local utils = {
-	fade = 0,
-	nextID = OBJ_ID_BASE
+	fade = 0
 }
 
 function utils.formatError(msg, ...)
@@ -70,9 +69,13 @@ function utils.checkArg(key, arg, query, func, nillable, default)
 			if not Entity.isEntity(arg) then
 				utils.formatError("%s() called with a '%s' argument that isn't an entity: %q", func, key, arg)
 			end
-		elseif query == "handle" then
+		elseif query == "pointer" then
 			if not world.isPointer(arg) then
 				utils.formatError("%s() called with a '%s' argument that isn't a pointer: %q", func, key, arg)
+			end
+		elseif query == "ID" then
+			if type(arg) ~= "number" or arg <= OBJ_ID_BASE then
+				utils.formatError("%s() called with a '%s' argument that isn't a valid ID: %q", func, key, arg)
 			end
 		elseif query == "asset" then
 			if type(arg) ~= "string" and type(arg) ~= "table" and type(arg) ~= "userdata" then
@@ -163,11 +166,6 @@ function utils.pool(initial, create, destroy)
 end
 
 utils.alloc, utils.free = utils.pool()
-
-function utils.newID()
-	utils.nextID = utils.nextID + 1
-	return utils.nextID
-end
 
 local function recursive_copy(obj, seen)
 	if seen[obj] then

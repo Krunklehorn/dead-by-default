@@ -37,7 +37,7 @@ function Vault:__call(params)
 	hwidth = hwidth or 75
 	oneway = oneway or false
 
-	return Vault.new(utils.newID(), pos, vel, angle, hwidth, oneway)
+	return Vault.new(OBJ_ID_BASE, pos, vel, angle, hwidth, oneway)
 end
 
 function Vault:__index(key)
@@ -63,6 +63,7 @@ function Vault:__tostring()
 else return string.format("Instance of 'Vault' (%s)", utils.addrString(self)) end
 end
 
+function Vault:setID(id) self.id = utils.checkArg("id", id, "ID", "Vault:setID") end
 function Vault:instanceOf(class) return class == Vault end
 function Vault.isVault(obj) return ffi.istype("Vault", obj) end
 

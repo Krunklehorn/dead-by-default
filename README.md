@@ -122,11 +122,12 @@ Color Improvements
 
 Shader Improvements
 - visibility occlusion :heavy_check_mark:
-- single uniform list for more objects per blend layer
-- arcs, polygons and bezier support
+- pseudo-3D shadow support :heavy_check_mark:
+- translucent primitives to modify incoming light color
+- arc, polygon and bezier curve support
 - more boolean operations
 - color and texture groups
-- primitive clustering in a tree structure for early cone-marching exits
+- primitive clustering for early cone-marching exits
 
 Core Improvements
 - area portals to mimic the basement stairs (or to make non-euclidean tiles lol)

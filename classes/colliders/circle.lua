@@ -25,7 +25,7 @@ function CircleCollider:__call(params)
 	vel = vel or vec2()
 	radius = radius or 0
 
-	return CircleCollider.new(utils.newID(), pos, vel, radius)
+	return CircleCollider.new(OBJ_ID_BASE, pos, vel, radius)
 end
 
 function CircleCollider:__index(key)
@@ -46,6 +46,7 @@ function CircleCollider:__tostring()
 	else return string.format("Instance of 'CircleCollider' (%s)", utils.addrString(self)) end
 end
 
+function CircleCollider:setID(id) self.id = utils.checkArg("id", id, "ID", "CircleCollider:setID") end
 function CircleCollider:instanceOf(class) return class == CircleCollider end
 
 function CircleCollider:draw(color, scale)

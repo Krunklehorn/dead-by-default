@@ -43,7 +43,7 @@ function LineTrigger:__call(params)
 	height = height or 0
 	onOverlap = onOverlap or nil
 
-	return LineTrigger.new(utils.newID(), p1, p2, vel, radius, height, onOverlap)
+	return LineTrigger.new(OBJ_ID_BASE, p1, p2, vel, radius, height, onOverlap)
 end
 
 function LineTrigger:__gc()
@@ -88,6 +88,7 @@ function LineTrigger:__tostring()
 	else return string.format("Instance of 'LineTrigger' (%s)", utils.addrString(self)) end
 end
 
+function LineTrigger:setID(id) self.id = utils.checkArg("id", id, "ID", "LineTrigger:setID") end
 function LineTrigger:instanceOf(class) return class == LineTrigger end
 
 LineTrigger.update = Trigger.update

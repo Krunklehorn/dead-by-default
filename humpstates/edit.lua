@@ -567,5 +567,6 @@ function editState:clearState()
 
 	self.pickValue = nil
 	self.toolState = nil
+	self.pmspos = nil
 	self.pmwpos = nil
 end

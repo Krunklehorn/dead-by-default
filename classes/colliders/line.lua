@@ -28,7 +28,7 @@ function LineCollider:__call(params)
 	vel = vel or vec2()
 	radius = radius or 0
 
-	return LineCollider.new(utils.newID(), p1, p2, vel, radius)
+	return LineCollider.new(OBJ_ID_BASE, p1, p2, vel, radius)
 end
 
 function LineCollider:__index(key)
@@ -53,6 +53,7 @@ function LineCollider:__tostring()
 	else return string.format("Instance of 'LineCollider' (%s)", utils.addrString(self)) end
 end
 
+function LineCollider:setID(id) self.id = utils.checkArg("id", id, "ID", "LineCollider:setID") end
 function LineCollider:instanceOf(class) return class == LineCollider end
 
 function LineCollider:draw(color, scale)

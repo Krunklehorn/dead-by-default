@@ -9,6 +9,16 @@ ffi.cdef[[
 
 Brush = {}
 
+local circles_data = ld.newByteData(SDF_MAX_BRUSHES * 4 * 4)
+local boxes_data = ld.newByteData(SDF_MAX_BRUSHES * 4 * 8)
+local lines_data = ld.newByteData(SDF_MAX_BRUSHES * 4 * 8)
+local lights_data = ld.newByteData(SDF_MAX_LIGHTS * 4 * 8)
+
+local circles_floatptr = ffi.cast("float*", circles_data:getFFIPointer())
+local boxes_floatptr = ffi.cast("float*", boxes_data:getFFIPointer())
+local lines_floatptr = ffi.cast("float*", lines_data:getFFIPointer())
+local lights_floatptr = ffi.cast("float*", lights_data:getFFIPointer())
+
 local function stencilFunc()
 	local w, h = lg.getDimensions()
 	local hw = w / 2
@@ -29,16 +39,6 @@ local function stencilFunc()
 	lg.pop()
 end
 
-local circles_data = ld.newByteData(SDF_MAX_BRUSHES * 4 * 4)
-local boxes_data = ld.newByteData(SDF_MAX_BRUSHES * 4 * 8)
-local lines_data = ld.newByteData(SDF_MAX_BRUSHES * 4 * 8)
-local lights_data = ld.newByteData(SDF_MAX_LIGHTS * 4 * 8)
-
-local circles_floatptr = ffi.cast("float*", circles_data:getFFIPointer())
-local boxes_floatptr = ffi.cast("float*", boxes_data:getFFIPointer())
-local lines_floatptr = ffi.cast("float*", lines_data:getFFIPointer())
-local lights_floatptr = ffi.cast("float*", lights_data:getFFIPointer())
-
 function Brush.isBrush(obj)
 	return ffi.istype("CircleBrush", obj) or
 		   ffi.istype("BoxBrush", obj) or
@@ -56,8 +56,9 @@ function Brush.batchSDF(brushes, entities)
 
 	lg.push("all")
 		if humpstate.current() ~= editState then
-			lg.setCanvas{SDF_LIGHT, depthstencil = SDF_STENCIL}
-			--lg.stencil(stencilFunc, "replace", 1)
+			lg.setCanvas{depthstencil = SDF_STENCIL}
+			lg.stencil(stencilFunc, "replace", 1)
+			--lg.setStencilTest("equal", 0)
 		end
 
 		local nCircles, nBoxes, nLines, nLights = 0, 0, 0, 0
@@ -86,26 +87,23 @@ function Brush.batchSDF(brushes, entities)
 				for e = 1, #entities do
 					local entity = entities[e]
 
-					if nLights >= SDF_MAX_LIGHTS then
-						utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %q", nLights) end
-
 					if entity.pos.z == brush.height then
 						if entity:instanceOf(Decal) then
 							decals[#decals + 1] = entity
 						elseif entity:instanceOf(Light) then
+							if nLights >= SDF_MAX_LIGHTS then
+								utils.formatError("Brush.batchSDF() attempted to exceed the maximum light count: %q", nLights) end
+
 							entity:payload(lights_floatptr, nLights * 8, camera, scale)
 							nLights = nLights + 1
 						end
 					end
 				end
 
+				-- Decals
 				if #decals > 0 then
-					if humpstate.current() == editState then
-						lg.setCanvas(Decal.canvas)
-					else
-						lg.setCanvas{Decal.canvas, depthstencil = SDF_STENCIL}
-						lg.setStencilTest("equal", 0)
-					end
+					if humpstate.current() == editState then lg.setCanvas(SDF_DECALS)
+					else lg.setCanvas{SDF_DECALS, depthstencil = SDF_STENCIL} end
 
 					lg.setShader()
 					lg.setBlendMode("alpha")
@@ -123,17 +121,13 @@ function Brush.batchSDF(brushes, entities)
 					end
 				end
 
-				lg.setBlendMode("replace")
-
+				-- Lights
 				if nLights > 0 then
-					if humpstate.current() == editState then
-						lg.setCanvas(SDF_LIGHT)
-					else
-						lg.setCanvas{SDF_LIGHT, depthstencil = SDF_STENCIL}
-						lg.setStencilTest("equal", 0)
-					end
+					if humpstate.current() == editState then lg.setCanvas(SDF_LIGHT)
+					else lg.setCanvas{SDF_LIGHT, depthstencil = SDF_STENCIL} end
 
 					lg.setShader(lightShader)
+					lg.setBlendMode("replace")
 
 					utils.send(lightShader, "LINE_WIDTH", LINE_WIDTH)
 					utils.send(lightShader, "LUMINANCE", LUMINANCE)
@@ -152,19 +146,22 @@ function Brush.batchSDF(brushes, entities)
 					utils.send(lightShader, "nLights", nLights * 2)
 
 					lg.draw(SDF_UNITPLANE)
-					lg.setStencilTest()
 
 					nLights = 0
 				end
 
+				-- Compositing
 				if nCircles > 0 or nBoxes > 0 or nLines > 0 then
-					lg.setCanvas(SDF_BACK)
+					if humpstate.current() == editState then lg.setCanvas(SDF_BACK)
+					else lg.setCanvas{SDF_BACK, depthstencil = SDF_STENCIL} end
+
 					lg.setShader(shapeShader)
+					lg.setBlendMode("replace")
 
 					utils.send(shapeShader, "LINE_WIDTH", LINE_WIDTH)
 					utils.send(shapeShader, "front", SDF_FRONT)
 					utils.send(shapeShader, "lighting", SDF_LIGHT)
-					utils.send(shapeShader, "decals", Decal.canvas)
+					utils.send(shapeShader, "decals", SDF_DECALS)
 					utils.send(shapeShader, "height", brush.height)
 
 					if nCircles > 0 then shapeShader:send("circles", circles_data, 0, nCircles * 4 * 4) end
@@ -180,7 +177,9 @@ function Brush.batchSDF(brushes, entities)
 					nCircles, nBoxes, nLines = 0, 0, 0
 				end
 
+				-- Selection
 				if humpstate.current() == editState then
+					lg.setShader()
 					lg.setBlendMode("alpha")
 
 					for o = 1, #editState.selection do
@@ -190,12 +189,10 @@ function Brush.batchSDF(brushes, entities)
 						   (Entity.isEntity(obj) and obj.pos.z == brush.height) then
 							obj:draw("selection") end
 					end
-
-					lg.setBlendMode("replace")
 				end
 
 				SDF_BACK, SDF_FRONT = SDF_FRONT, SDF_BACK
-				Decal.canvas:renderTo(lg.clear)
+				SDF_DECALS:renderTo(lg.clear)
 				SDF_LIGHT:renderTo(lg.clear)
 			end
 		end
